@@ -56,27 +56,39 @@ total_seconds:    NNN.N
 peak_vram_mb:     XXXXX.X
 num_steps:        NNNN
 encoder_model:    MODEL_NAME
+batch_size:       NNN
+max_doc_len:      NNN
+max_query_len:    NNN
+lr:               X.Xe-XX
+temperature:      X.XX
 num_docs_indexed: NNNNNN
 ```
 
 Extract the key metrics:
 ```bash
-grep "^ndcg@10:\|^peak_vram_mb:" run.log
+grep "^ndcg@10:\|^map@100:\|^recall@1000:\|^peak_vram_mb:" run.log
 ```
 
 ## Logging results
 
-Log to `results.tsv` (tab-separated):
+After each completed run:
+1. **Save the log**: `mkdir -p logs && cp run.log logs/$(git rev-parse --short HEAD).log`
+2. **Append to results.tsv** (tab-separated, 10 columns):
+
 ```
-commit	ndcg@10	memory_gb	status	description
+commit	ndcg@10	map@100	recall@1000	memory_gb	status	encoder	batch	doc_len	lr	description
 ```
 - commit: 7-char short hash
-- ndcg@10: e.g. 0.421234 (use 0.000000 for crashes)
+- ndcg@10, map@100, recall@1000: from summary (use 0.000000 for crashes)
 - memory_gb: peak_vram_mb / 1024, rounded to .1f (use 0.0 for crashes)
 - status: `keep`, `discard`, or `crash`
+- encoder: short model name (e.g. `e5-base-v2`)
+- batch: BATCH_SIZE value
+- doc_len: MAX_DOC_LEN value
+- lr: LR value (e.g. `1e-5`)
 - description: short text of what this experiment tried
 
-Do NOT commit results.tsv (leave it untracked).
+Do NOT commit results.tsv or logs/ (leave them untracked).
 
 ## The experiment loop
 

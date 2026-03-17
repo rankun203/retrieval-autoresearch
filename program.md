@@ -135,11 +135,11 @@ commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	bat
 git -C /path/to/repo checkout master && git cherry-pick <commit> && git checkout -
 ```
 
-**If not improved** → reset to discard changes (commit becomes orphan but is still reachable by hash):
+**If not improved** → reset to discard changes:
 ```bash
 git reset --hard HEAD~1
 ```
-The results.tsv row still has the commit hash so you can always `git show <hash>` to see what was tried.
+The commit becomes an orphan and will eventually be garbage-collected — that's fine. The results.tsv row preserves the metrics and description for reference.
 
 ### 7. Close the worktree
 

@@ -155,12 +155,16 @@ When all runs in a worktree are done (or the experiment direction is exhausted):
 2. **Verify results.tsv** — every run (keep, discard, crash) must have a row.
 3. **Verify kept commits are on master** — cherry-pick if not already done.
 4. **Update `docs/plan.md`** — check off completed items, update current best, add notes on findings.
-5. **Commit and push master**:
+5. **Update progress chart** — run the analysis notebook to regenerate `progress.png`:
    ```bash
-   git add results.tsv docs/plan.md && git commit -m "Close <worktree>: <summary>"
+   uv run jupyter execute analysis.ipynb
+   ```
+6. **Commit and push master**:
+   ```bash
+   git add results.tsv docs/plan.md progress.png && git commit -m "Close <worktree>: <summary>"
    git push
    ```
-6. **Remove the worktree and branch**:
+7. **Remove the worktree and branch**:
    ```bash
    git worktree remove --force worktrees/<worktree_name>
    git branch -D autoresearch/<worktree_name>

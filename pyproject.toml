@@ -17,6 +17,7 @@ dependencies = [
     "requests>=2.32.0",
     "torch==2.9.1",
     "matplotlib>=3.10.8",
+    "jupyter>=1.0.0",
 ]
 
 [tool.uv.sources]

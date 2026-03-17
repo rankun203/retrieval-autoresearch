@@ -56,8 +56,9 @@ git add -A && git commit -m "exp-name: description of what this tries"
 ### 2. Run the experiment
 
 ```bash
-PYTHONUNBUFFERED=1 uv run train.py > run.log 2>&1
+PYTHONUNBUFFERED=1 uv run train.py >> run.log 2>&1
 ```
+Use `>>` (append) not `>` (overwrite) — a worktree may have multiple runs (crash → fix → re-run) and we want all logs preserved.
 Use `PYTHONUNBUFFERED=1` so progress prints flush immediately to `run.log`.
 All print statements in the experiment code should use `flush=True` for real-time progress tracking.
 

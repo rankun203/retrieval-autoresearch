@@ -129,7 +129,11 @@ LOOP FOREVER:
    ```
    The results.tsv row still has the commit hash so you can always `git show <hash>` to see what was tried.
 
-**Timeout**: Each experiment should take ~12-15 minutes total. If it exceeds 25 minutes, kill and treat as failure.
+**Timeout**: Different pipelines have different runtimes:
+- Bi-encoder only: ~15 min (train + encode + eval)
+- Bi-encoder + cross-encoder rerank: ~30-50 min
+- BM25 + LLM reranker (0.6B+): ~1-3 hours
+- General limit: **12 hours max** unless the method is high-priority and expected to yield big improvements. Kill and treat as failure if exceeded.
 
 **NEVER STOP**: Once the loop starts, do not pause for human approval. Run until manually interrupted.
 

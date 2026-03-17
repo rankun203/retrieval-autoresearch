@@ -5,7 +5,9 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-- **exp23 (BM25+Bo1 + Qwen3-Reranker-0.6B)**: BM25+Bo1 top-100 reranked with Qwen3-Reranker-0.6B
+- **exp24 (BM25+Bo1 + Qwen3-Reranker-0.6B top-1000)**: BM25+Bo1 top-1000 reranked with Qwen3-Reranker-0.6B
+- MAP@100 = 0.2596 | MAP@1000 = 0.3026 | nDCG@10 = 0.5304 | recall@100 = 0.4660
+- **exp23 (BM25+Bo1 + Qwen3-Reranker-0.6B top-100)**: BM25+Bo1 top-100 reranked with Qwen3-Reranker-0.6B
 - MAP@100 = 0.2552 | MAP@1000 = 0.2552 | nDCG@10 = 0.5292 | recall@100 = 0.4527
 - **exp22 (BM25+Bo1)**: pyterrier BM25(k1=0.9,b=0.4) + Bo1(fbDocs=5,fbTerms=30)
 - MAP@100 = 0.2504 | MAP@1000 = 0.2968 | nDCG@10 = 0.4662 | recall@100 = 0.4527
@@ -30,7 +32,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - [x] exp18: MiniLM-L-12-v2 reranker → MAP=0.1971 (worse, discarded)
 - [x] exp21: cross-encoder/ms-marco-electra-base → SUSPICIOUS nDCG@10=0.075, model fails on long Robust04 docs despite working on short pairs
 - [x] exp23: Qwen3-Reranker-0.6B rerank BM25+Bo1 top-100 → MAP@100=0.2552, nDCG@10=0.5292 ← new best
-- [ ] Try Qwen3-Reranker-0.6B rerank top-200/1000 (more recall headroom)
+- [x] exp24: Qwen3-Reranker-0.6B rerank BM25+Bo1 top-1000 → MAP@100=0.2596, MAP@1000=0.3026, nDCG@10=0.5304, recall@100=0.4660 ← new best (marginal gain over exp23, +75min runtime)
 
 ## Priority 2: Better backbones
 

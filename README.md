@@ -1,6 +1,8 @@
 # autoresearch — dense retrieval
 
-Autonomous dense retrieval research on Robust04. An AI agent fine-tunes a bi-encoder on MS-MARCO, indexes Robust04, retrieves top-1000 per query, and evaluates nDCG@10. It then iterates: modify `train.py`, commit, run, keep or discard, repeat.
+![progress](progress.png)
+
+Autonomous dense retrieval research on Robust04. An AI agent fine-tunes a bi-encoder on MS-MARCO, indexes Robust04, retrieves top-1000 per query, and evaluates MAP@100. It then iterates: modify `train.py`, commit, run, keep or discard, repeat.
 
 ## How it works
 

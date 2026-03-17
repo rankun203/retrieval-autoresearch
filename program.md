@@ -86,7 +86,7 @@ After each completed run:
 2. **Append to the root results.tsv** at the project root (NOT in the worktree). Use absolute path or `../../results.tsv` from worktree. Tab-separated, 12 columns:
 
 ```
-commit	ndcg@10	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_len	lr	description
+commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_len	lr	description	worktree
 ```
 - commit: 7-char short hash
 - ndcg@10, map@100, recall@100: from summary (use 0.000000 for crashes)

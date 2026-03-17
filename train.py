@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 
 from prepare import (
-    DATA_DIR, TIME_BUDGET, load_robust04, evaluate_run, stream_msmarco_triples
+    DATA_DIR, TIME_BUDGET, load_robust04, evaluate_run, write_trec_run, stream_msmarco_triples
 )
 
 # ---------------------------------------------------------------------------
@@ -283,6 +283,18 @@ print(f"Reranking done: {len(query_ids)} queries × top-{RERANK_TOP_K}")
 run = reranked_run
 
 # ---------------------------------------------------------------------------
+# Write TREC run file
+# ---------------------------------------------------------------------------
+
+import subprocess
+worktree_name = subprocess.check_output(
+    ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True
+).strip().replace("autoresearch/", "")
+run_path = f"runs/{worktree_name}/{worktree_name}.run"
+write_trec_run(run, run_path, run_name=worktree_name)
+print(f"TREC run written: {run_path}")
+
+# ---------------------------------------------------------------------------
 # Evaluate
 # ---------------------------------------------------------------------------
 
@@ -299,8 +311,10 @@ peak_vram_mb = torch.cuda.max_memory_allocated() / 1024 / 1024 if torch.cuda.is_
 
 print("---")
 print(f"ndcg@10:          {metrics['ndcg@10']:.6f}")
+print(f"map@1000:         {metrics['map@1000']:.6f}")
 print(f"map@100:          {metrics['map@100']:.6f}")
 print(f"recall@100:       {metrics['recall@100']:.6f}")
+print(f"run_file:         {run_path}")
 print(f"training_seconds: {total_training_time:.1f}")
 print(f"total_seconds:    {t_end - t_start:.1f}")
 print(f"peak_vram_mb:     {peak_vram_mb:.1f}")

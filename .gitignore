@@ -20,4 +20,5 @@ AGENTS.md
 dev/
 
 logs/
+runs/
 *.swp

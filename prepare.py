@@ -145,21 +145,36 @@ def load_robust04():
     return corpus, queries, qrels
 
 
+def write_trec_run(run: dict, path: str, run_name: str = "autoresearch"):
+    """
+    Write a retrieval run in standard TREC run format.
+    run: {qid: {doc_id: score}}
+    Format: qid Q0 docno rank score run_name
+    """
+    from pathlib import Path
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        for qid in sorted(run.keys(), key=lambda x: int(x) if x.isdigit() else x):
+            sorted_docs = sorted(run[qid].items(), key=lambda x: x[1], reverse=True)
+            for rank, (doc_id, score) in enumerate(sorted_docs, 1):
+                f.write(f"{qid} Q0 {doc_id} {rank} {score:.6f} {run_name}\n")
+
+
 def evaluate_run(run: dict, qrels: dict) -> dict:
     """
     Evaluate a retrieval run against qrels.
     run:   {qid: {doc_id: score}}   (higher score = more relevant)
     qrels: {qid: {doc_id: int}}
 
-    Returns dict with keys: ndcg@10, map@100, recall@1000
-    The primary metric is ndcg@10 — higher is better.
+    Returns dict with keys: ndcg@10, map@1000, map@100, recall@100
     """
     import pytrec_eval
-    measures = {"ndcg_cut_10", "map_cut_100", "recall_100"}
+    measures = {"ndcg_cut_10", "map_cut_1000", "map_cut_100", "recall_100"}
     evaluator = pytrec_eval.RelevanceEvaluator(qrels, measures)
     results = evaluator.evaluate(run)
     out = {}
-    for m_key, m_name in [("ndcg_cut_10", "ndcg@10"), ("map_cut_100", "map@100"), ("recall_100", "recall@100")]:
+    for m_key, m_name in [("ndcg_cut_10", "ndcg@10"), ("map_cut_1000", "map@1000"),
+                           ("map_cut_100", "map@100"), ("recall_100", "recall@100")]:
         vals = [v[m_key] for v in results.values() if m_key in v]
         out[m_name] = float(np.mean(vals)) if vals else 0.0
     return out

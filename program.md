@@ -97,7 +97,7 @@ Only change TIME_BUDGET if you see the same signal 2+ experiments in a row.
 ## Logging results
 
 After each completed run:
-1. **Save the log**: `mkdir -p logs && cp run.log logs/$(git rev-parse --short HEAD).log`
+1. **Save the log**: `cp run.log runs/<worktree_name>/run.log` (next to the TREC run file)
 2. **Append to the root results.tsv** at the project root (NOT in the worktree). Use absolute path or `../../results.tsv` from worktree. Tab-separated, 12 columns:
 
 ```

@@ -29,7 +29,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 ## Priority 2: Better backbones
 
 - [ ] Fix Qwen3-Embedding-0.6B (EOS/pooling issue) — zero-shot then fine-tuned
-- [ ] `intfloat/e5-large-v2` with reduced batch (if fits in 23GB)
+- [ ] `intfloat/e5-large-v2` with batch=64 (fits easily in 46GB L40S)
 - [ ] `BAAI/bge-base-en-v1.5` as alternative to e5
 
 ## Priority 3: Training improvements
@@ -46,17 +46,18 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Priority 5: Advanced methods (from survey)
 
-- [ ] ColBERT-style late interaction (if memory allows)
+- [ ] ColBERT-style late interaction (feasible with 46GB L40S)
 - [ ] Listwise reranking with LLM (RankGPT-style)
 - [ ] Two-stage curriculum: easy negatives → model-mined hard negatives
 - [ ] Document expansion: generate synthetic queries per document (docT5query-style)
 
-## Memory constraints (A10G, 23GB)
+## Memory constraints (L40S, 46GB)
 
-- e5-base-v2: batch=64, encode_batch=256, doc_len≤220 → ~20GB
-- e5-large-v2: batch=16, encode_batch=64, doc_len≤180 → estimate ~22GB
-- Qwen3-0.6B: batch=32, encode_batch=128 → ~17GB
-- Cross-encoder reranking: free bi-encoder first, batch=16-32
+- e5-base-v2: batch=128, encode_batch=512, doc_len≤256 → ~20GB (plenty of headroom)
+- e5-large-v2: batch=64, encode_batch=256, doc_len≤220 → estimate ~30GB (fits comfortably)
+- Qwen3-0.6B: batch=64, encode_batch=256 → ~20GB
+- Cross-encoder reranking: can keep bi-encoder in memory alongside reranker
+- ColBERT-style late interaction: feasible with token-level embeddings in memory
 
 ## Notes
 

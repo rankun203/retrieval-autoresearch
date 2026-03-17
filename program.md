@@ -114,7 +114,11 @@ LOOP FOREVER:
 4. Run: `uv run train.py > run.log 2>&1`
 5. Read results: `grep "^ndcg@10:\|^map@1000:\|^map@100:\|^recall@100:\|^peak_vram_mb:" run.log`
 6. If empty → crashed. Run `tail -n 50 run.log` for stack trace. Fix if trivial, else skip.
-7. **Log to results.tsv** (at project root, using the commit hash from step 3).
+7. **Sanity-check results**: If a result is far off from what you'd expect (e.g. near-zero for a known-good model, or much worse than baseline), do NOT just log and move on. Instead:
+   - Add a note in the results.tsv description like `SUSPICIOUS: expected ~0.4 got 0.01`
+   - Research online (WebSearch) for the correct way to use that model/method — check the model card, HuggingFace docs, or GitHub issues
+   - Fix and re-run before moving on
+8. **Log to results.tsv** (at project root, using the commit hash from step 3).
 8. **If improved** → keep the commit. Cherry-pick onto master:
    ```bash
    git -C /path/to/repo checkout master && git cherry-pick <commit> && git checkout -

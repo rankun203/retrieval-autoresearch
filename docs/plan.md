@@ -24,6 +24,9 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - [x] MAP@100 ≥ 0.20 (milestone 1) — achieved exp17: 0.2220
 - [x] MAP@100 > 0.25 (milestone 2) — achieved exp22 BM25+Bo1: 0.2504
 - [x] MAP@100 > 0.30 (beat BM25+PRF MAP@100 significantly) — achieved exp30: 0.3275 (RRF fused, no reranker)
+- [x] MAP@100 > 0.40
+- [x] MAP@100 > 0.50
+- [x] Finish exploring all methods in plan find overall best
 
 ## Basic methods
 

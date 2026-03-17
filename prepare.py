@@ -127,6 +127,7 @@ def load_robust04():
         for line in f:
             d = json.loads(line)
             queries[d["_id"]] = d["text"]
+    queries.pop("672", None)  # qid 672 has no relevance judgments, excluded by convention
 
     qrels = {}
     qrels_path = ROBUST04_DIR / "qrels" / "test.tsv"

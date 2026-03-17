@@ -17,14 +17,13 @@ The primary metric is **MAP@100** — higher is better. We also track nDCG@10 an
    - `prepare.py` — fixed utilities: data loading, evaluation, MS-MARCO training stream. Do NOT modify.
    - `train.py` — the baseline you iterate on.
 4. **Verify data exists**: Check that `~/.cache/autoresearch-retrieval/robust04/` exists. If not, tell the human to run `uv run prepare.py` from the repo root.
-5. **Initialize results.tsv**: Create `./worktrees/<tag>/results.tsv` with header only.
-6. **All commands run from inside the worktree directory** (`./worktrees/<tag>/`).
-7. **Confirm and go**.
+5. **All commands run from inside the worktree directory** (`./worktrees/<name>/`).
+6. **Confirm and go**.
 
 ## Experimentation
 
 Training runs for a **fixed 10-minute (600s) wall-clock budget** (tracked in `total_training_time`).
-After training, the model encodes the full Robust04 corpus, builds a FAISS index, retrieves top-1000 per query, and evaluates nDCG@10.
+After training, the model encodes the full Robust04 corpus, builds a FAISS index, retrieves top-1000 per query, and evaluates.
 
 **What you CAN do:**
 - Modify `train.py` or any other experiment files. Everything is fair game:
@@ -43,46 +42,48 @@ After training, the model encodes the full Robust04 corpus, builds a FAISS index
 
 **The goal: maximize MAP@100 on Robust04 test queries (249 topics, excluding qid 672).**
 
-## TREC Run Files
+## Experiment round
 
-Every experiment must produce a TREC-format run file at:
-```
-runs/<worktree_name>/<worktree_name>.run
-```
+An experiment round is one full cycle: commit code, run, evaluate, log, decide keep/discard. Everything below happens inside the worktree.
 
-Format: `qid Q0 docno rank score run_name` (standard trec_eval compatible).
-Use `write_trec_run()` from `prepare.py` to generate this file after retrieval/reranking, before evaluation.
+### 1. Commit before running
 
-The `runs/` directory is gitignored (run files are large). Run files can be re-evaluated anytime with:
+Every experiment must have a commit hash for traceability:
 ```bash
-uv run evaluate.py --run runs/<name>/<name>.run --output-dir eval_results/
+git add -A && git commit -m "exp-name: description of what this tries"
 ```
 
-## Output format
+### 2. Run the experiment
 
-The script always prints this summary at the end:
+```bash
+PYTHONUNBUFFERED=1 uv run train.py > run.log 2>&1
+```
+Use `PYTHONUNBUFFERED=1` so progress prints flush immediately to `run.log`.
+All print statements in the experiment code should use `flush=True` for real-time progress tracking.
+
+### 3. Read results
+
+The script prints a summary block at the end:
 ```
 ---
 ndcg@10:          0.XXXXXX
 map@100:          0.XXXXXX
-recall@100:      0.XXXXXX
+recall@100:       0.XXXXXX
 training_seconds: 600.1
 total_seconds:    NNN.N
 peak_vram_mb:     XXXXX.X
 num_steps:        NNNN
 encoder_model:    MODEL_NAME
-batch_size:       NNN
-max_doc_len:      NNN
-max_query_len:    NNN
-lr:               X.Xe-XX
-temperature:      X.XX
 num_docs_indexed: NNNNNN
+eval_duration:    NNN.NNN
 ```
 
-Extract the key metrics:
+Extract key metrics:
 ```bash
 grep "^ndcg@10:\|^map@100:\|^recall@100:\|^peak_vram_mb:\|^loss_curve:\|^budget_assessment:" run.log
 ```
+
+If empty → crashed. Run `tail -n 50 run.log` for the stack trace. Fix if trivial, else skip.
 
 The summary also includes:
 - `loss_curve`: smoothed loss at 0%, 10%, ..., 100% of training time
@@ -94,11 +95,24 @@ The summary also includes:
 - `OK`: keep `TIME_BUDGET = 600`.
 Only change TIME_BUDGET if you see the same signal 2+ experiments in a row.
 
-## Logging results
+### 4. Sanity-check results
 
-After each completed run:
-1. **Save the log**: `cp run.log runs/<worktree_name>/run.log` (next to the TREC run file)
-2. **Append to the root results.tsv** at the project root (NOT in the worktree). Use absolute path or `../../results.tsv` from worktree. Tab-separated, 12 columns:
+If a result is far off from what you'd expect (e.g. near-zero for a known-good model, or much worse than baseline), do NOT just log and move on. Instead:
+- Add a note in the results.tsv description like `SUSPICIOUS: expected ~0.4 got 0.01`
+- Research online (WebSearch) for the correct way to use that model/method — check the model card, HuggingFace docs, or GitHub issues
+- Fix and re-run before moving on
+
+### 5. Log results
+
+Every run (keep, discard, crash) gets logged:
+
+**a) Save run artifacts** inside the worktree (train.py should do this automatically):
+- TREC run file: `runs/<worktree_name>/<worktree_name>.run`
+  - Format: `qid Q0 docno rank score run_name` (standard trec_eval compatible)
+  - Use `write_trec_run()` from `prepare.py` to generate this file after retrieval/reranking, before evaluation
+- Run log: `cp run.log runs/<worktree_name>/run.log`
+
+**b) Append to the root results.tsv** at the project root (NOT in the worktree). Use absolute path or `../../results.tsv` from worktree. Tab-separated columns:
 
 ```
 commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_len	lr	description	worktree
@@ -114,37 +128,59 @@ commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	bat
 - lr: LR value (e.g. `1e-5`)
 - description: short text of what this experiment tried
 
-Do NOT commit results.tsv or logs/ (leave them untracked). results.tsv lives at the project root, shared across all worktrees.
+### 6. Keep or discard
+
+**If improved** → keep the commit. Cherry-pick onto master:
+```bash
+git -C /path/to/repo checkout master && git cherry-pick <commit> && git checkout -
+```
+
+**If not improved** → reset to discard changes (commit becomes orphan but is still reachable by hash):
+```bash
+git reset --hard HEAD~1
+```
+The results.tsv row still has the commit hash so you can always `git show <hash>` to see what was tried.
+
+### 7. Close the worktree
+
+When all runs in a worktree are done (or the experiment direction is exhausted):
+
+1. **Copy run artifacts** to `runs/<worktree_name>/` at the **repo root** (NOT inside the worktree). Save all TREC run files and logs — if multiple runs exist (e.g. from iterations), save all with descriptive names:
+   ```bash
+   mkdir -p runs/<worktree_name>
+   cp worktrees/<worktree_name>/runs/<worktree_name>/*.run runs/<worktree_name>/
+   cp worktrees/<worktree_name>/run.log runs/<worktree_name>/run.log
+   ```
+2. **Verify results.tsv** — every run (keep, discard, crash) must have a row.
+3. **Verify kept commits are on master** — cherry-pick if not already done.
+4. **Update `docs/plan.md`** — check off completed items, update current best, add notes on findings.
+5. **Commit and push master**:
+   ```bash
+   git add results.tsv docs/plan.md && git commit -m "Close <worktree>: <summary>"
+   git push
+   ```
+6. **Remove the worktree and branch**:
+   ```bash
+   git worktree remove --force worktrees/<worktree_name>
+   git branch -D autoresearch/<worktree_name>
+   ```
+
+The `runs/` directory is gitignored (run files are large). Run files can be re-evaluated anytime with:
+```bash
+uv run evaluate.py --run runs/<name>/<name>.run --output-dir eval_results/
+```
+
+Do NOT commit results.tsv (leave it untracked). It lives at the project root, shared across all worktrees.
 
 ## The experiment loop
 
 LOOP FOREVER:
 
-1. Look at git state (current branch/commit).
-2. Plan an experimental change to `train.py` (or new helper files). Consult `docs/plan.md` for the prioritized experiment list and `docs/ir-survey-202603.md` for paper-backed ideas. Pick the highest-priority unchecked item from the plan.
-3. **Commit changes BEFORE running** — every experiment must have a commit hash:
-   ```bash
-   git add -A && git commit -m "exp-name: description of what this tries"
-   ```
-4. Run: `PYTHONUNBUFFERED=1 uv run train.py > run.log 2>&1`
-   Use `PYTHONUNBUFFERED=1` so progress prints flush immediately to `run.log`.
-   All print statements in the experiment code should use `flush=True` for real-time progress tracking.
-5. Read results: `grep "^ndcg@10:\|^map@1000:\|^map@100:\|^recall@100:\|^peak_vram_mb:" run.log`
-6. If empty → crashed. Run `tail -n 50 run.log` for stack trace. Fix if trivial, else skip.
-7. **Sanity-check results**: If a result is far off from what you'd expect (e.g. near-zero for a known-good model, or much worse than baseline), do NOT just log and move on. Instead:
-   - Add a note in the results.tsv description like `SUSPICIOUS: expected ~0.4 got 0.01`
-   - Research online (WebSearch) for the correct way to use that model/method — check the model card, HuggingFace docs, or GitHub issues
-   - Fix and re-run before moving on
-8. **Log to results.tsv** (at project root, using the commit hash from step 3).
-8. **If improved** → keep the commit. Cherry-pick onto master:
-   ```bash
-   git -C /path/to/repo checkout master && git cherry-pick <commit> && git checkout -
-   ```
-9. **If not improved** → reset to discard changes (commit becomes orphan but is still reachable by hash):
-   ```bash
-   git reset --hard HEAD~1
-   ```
-   The results.tsv row still has the commit hash so you can always `git show <hash>` to see what was tried.
+1. Consult `docs/plan.md` for the prioritized experiment list and `docs/ir-survey-202603.md` for paper-backed ideas. Pick the highest-priority unchecked item.
+2. **Set up** a new worktree (see Setup above).
+3. **Run experiment rounds** (steps 1–6 above). Iterate within the worktree: modify code, commit, run, log, keep/discard. Repeat until the experiment direction is exhausted.
+4. **Close the worktree** (step 7 above).
+5. Go to 1.
 
 **Timeout**: Different pipelines have different runtimes:
 - Bi-encoder only: ~15 min (train + encode + eval)
@@ -155,31 +191,3 @@ LOOP FOREVER:
 **NEVER STOP**: Once the loop starts, do not pause for human approval. Run until manually interrupted.
 
 **Simplicity criterion**: A 0.001 improvement that adds 50 lines of complex code is not worth it. A simplification that matches performance? Always keep.
-
-## Closing an experiment round
-
-After all runs in a worktree are done (or the experiment direction is exhausted):
-
-1. **Save all run artifacts** to `runs/<worktree_name>/` at the repo root (NOT inside the worktree):
-   ```bash
-   mkdir -p runs/<worktree_name>
-   # Copy TREC run file(s) — may already be there from train.py
-   cp worktrees/<worktree_name>/runs/<worktree_name>/<worktree_name>.run runs/<worktree_name>/ 2>/dev/null
-   # Copy run log(s)
-   cp worktrees/<worktree_name>/run.log runs/<worktree_name>/run.log
-   # If multiple runs exist (e.g. from iterations), save all with descriptive names
-   ```
-2. **Ensure results.tsv is up to date** — every run (keep, discard, crash) must have a row.
-3. **Cherry-pick kept commits onto master** (if not already done).
-4. **Update `docs/plan.md`** — check off completed items, update current best, add notes on findings.
-5. **Commit and push master** — results.tsv + plan.md changes:
-   ```bash
-   git add results.tsv docs/plan.md && git commit -m "Close <worktree>: <summary>"
-   git push
-   ```
-6. **Remove the worktree**:
-   ```bash
-   git worktree remove worktrees/<worktree_name>
-   # Delete the branch if all useful commits are cherry-picked to master
-   git branch -D autoresearch/<worktree_name>
-   ```

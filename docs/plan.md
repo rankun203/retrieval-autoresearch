@@ -5,6 +5,8 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
+- **exp27 (Hybrid RRF + Qwen3-Reranker-0.6B)**: dense(e5-base-v2) + BM25+Bo1 fused via RRF, reranked top-100 with Qwen3-Reranker-0.6B
+- MAP@100 = 0.2675 | nDCG@10 = 0.5441 | recall@100 = 0.4843
 - **exp24 (BM25+Bo1 + Qwen3-Reranker-0.6B top-1000)**: BM25+Bo1 top-1000 reranked with Qwen3-Reranker-0.6B
 - MAP@100 = 0.2596 | MAP@1000 = 0.3026 | nDCG@10 = 0.5304 | recall@100 = 0.4660
 - **exp23 (BM25+Bo1 + Qwen3-Reranker-0.6B top-100)**: BM25+Bo1 top-100 reranked with Qwen3-Reranker-0.6B
@@ -50,7 +52,9 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Priority 4: Hybrid retrieval
 
-- [ ] Dense + BM25 score interpolation (requires implementing BM25 scoring)
+- [x] exp27: Dense(e5-base-v2) + BM25+Bo1 RRF fusion → Qwen3-Reranker top-100 → MAP@100=0.2675, nDCG@10=0.5441, recall@100=0.4843 ← new best
+- [ ] Try RRF top-200/1000 reranking for more recall headroom
+- [ ] Try linear interpolation instead of RRF
 - [ ] SPLADE-style sparse augmentation on top of dense
 
 ## Priority 5: Advanced methods (from survey)

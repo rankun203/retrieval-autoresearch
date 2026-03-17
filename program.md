@@ -155,3 +155,31 @@ LOOP FOREVER:
 **NEVER STOP**: Once the loop starts, do not pause for human approval. Run until manually interrupted.
 
 **Simplicity criterion**: A 0.001 improvement that adds 50 lines of complex code is not worth it. A simplification that matches performance? Always keep.
+
+## Closing an experiment round
+
+After all runs in a worktree are done (or the experiment direction is exhausted):
+
+1. **Save all run artifacts** to `runs/<worktree_name>/` at the repo root (NOT inside the worktree):
+   ```bash
+   mkdir -p runs/<worktree_name>
+   # Copy TREC run file(s) — may already be there from train.py
+   cp worktrees/<worktree_name>/runs/<worktree_name>/<worktree_name>.run runs/<worktree_name>/ 2>/dev/null
+   # Copy run log(s)
+   cp worktrees/<worktree_name>/run.log runs/<worktree_name>/run.log
+   # If multiple runs exist (e.g. from iterations), save all with descriptive names
+   ```
+2. **Ensure results.tsv is up to date** — every run (keep, discard, crash) must have a row.
+3. **Cherry-pick kept commits onto master** (if not already done).
+4. **Update `docs/plan.md`** — check off completed items, update current best, add notes on findings.
+5. **Commit and push master** — results.tsv + plan.md changes:
+   ```bash
+   git add results.tsv docs/plan.md && git commit -m "Close <worktree>: <summary>"
+   git push
+   ```
+6. **Remove the worktree**:
+   ```bash
+   git worktree remove worktrees/<worktree_name>
+   # Delete the branch if all useful commits are cherry-picked to master
+   git branch -D autoresearch/<worktree_name>
+   ```

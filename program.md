@@ -66,8 +66,18 @@ num_docs_indexed: NNNNNN
 
 Extract the key metrics:
 ```bash
-grep "^ndcg@10:\|^map@100:\|^recall@1000:\|^peak_vram_mb:" run.log
+grep "^ndcg@10:\|^map@100:\|^recall@1000:\|^peak_vram_mb:\|^loss_curve:\|^budget_assessment:" run.log
 ```
+
+The summary also includes:
+- `loss_curve`: smoothed loss at 0%, 10%, ..., 100% of training time
+- `budget_assessment`: one of `OK`, `UNDERTRAINED`, or `OVERFIT/PLATEAU`
+
+**Act on the budget assessment**:
+- `UNDERTRAINED`: next experiment should try `TIME_BUDGET = 900` (15 min). If consistently undertrained, raise further.
+- `OVERFIT/PLATEAU`: next experiment can try `TIME_BUDGET = 300` (5 min) — wasting time on flat loss.
+- `OK`: keep `TIME_BUDGET = 600`.
+Only change TIME_BUDGET if you see the same signal 2+ experiments in a row.
 
 ## Logging results
 

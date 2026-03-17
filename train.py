@@ -94,6 +94,10 @@ total_training_time = 0.0
 step = 0
 smooth_loss = 0.0
 
+# Loss curve: record smoothed loss at each 10% of TIME_BUDGET
+loss_curve = []       # list of (pct, loss) at 0%,10%,...,100%
+_next_curve_pct = 0   # next checkpoint to record (0, 10, 20, ...)
+
 print(f"Training for {TIME_BUDGET}s on MS-MARCO...")
 
 model.train()
@@ -144,9 +148,19 @@ while True:
     remaining = max(0, TIME_BUDGET - total_training_time)
     print(f"\rstep {step:05d} | loss: {debiased:.4f} | dt: {dt*1000:.0f}ms | remaining: {remaining:.0f}s    ", end="", flush=True)
 
+    # Record loss curve at each 10% interval
+    pct_done = int(100 * total_training_time / TIME_BUDGET)
+    while _next_curve_pct <= pct_done and _next_curve_pct <= 100:
+        loss_curve.append((_next_curve_pct, round(debiased, 4)))
+        _next_curve_pct += 10
+
     step += 1
     if step > 2 and total_training_time >= TIME_BUDGET:
         break
+
+# Ensure 100% is always recorded
+if not loss_curve or loss_curve[-1][0] < 100:
+    loss_curve.append((100, round(debiased, 4)))
 
 print()
 print(f"Training done: {step} steps, {total_training_time:.1f}s")
@@ -236,3 +250,15 @@ print(f"max_query_len:    {MAX_QUERY_LEN}")
 print(f"lr:               {LR}")
 print(f"temperature:      {TEMPERATURE}")
 print(f"num_docs_indexed: {len(doc_ids)}")
+curve_str = "  ".join(f"{p}%:{l}" for p, l in loss_curve)
+print(f"loss_curve:       {curve_str}")
+# Budget assessment
+if len(loss_curve) >= 2:
+    drop_first_half = loss_curve[0][1] - loss_curve[len(loss_curve)//2][1]
+    drop_second_half = loss_curve[len(loss_curve)//2][1] - loss_curve[-1][1]
+    if drop_second_half > 0.5 * drop_first_half:
+        print("budget_assessment: UNDERTRAINED — loss still dropping, consider longer budget")
+    elif drop_second_half < 0.05 * drop_first_half:
+        print("budget_assessment: OVERFIT/PLATEAU — loss flat in second half, budget may be too long")
+    else:
+        print("budget_assessment: OK — loss curve looks healthy")

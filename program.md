@@ -170,7 +170,7 @@ The `runs/` directory is gitignored (run files are large). Run files can be re-e
 uv run evaluate.py --run runs/<name>/<name>.run --output-dir eval_results/
 ```
 
-Do NOT commit results.tsv (leave it untracked). It lives at the project root, shared across all worktrees.
+Commit results.tsv after updating it — it is tracked in git. It lives at the project root, shared across all worktrees.
 
 ## The experiment loop
 

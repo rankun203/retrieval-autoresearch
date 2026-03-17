@@ -32,3 +32,4 @@ a7568f2	0.446091	0.212173	0.183382	0.360278	27.8	3036.140	discard	e5-large-v2	32
 e06d646	0.406171	0.187851	0.160530	0.331006	27.8	N/A	discard	e5-large-v2	32	220	1e-5	exp25 dense-only: e5-large-v2 worse than e5-base (batch=32 hurts contrastive)	exp25-e5-large
 e06d646	0.471644	0.249681	0.221851	0.410821	27.8	N/A	discard	e5-large-v2+reranker	32	220	1e-5	exp25 +MiniLM rerank top-1000: matches e5-base+rerank, no gain from larger model	exp25-e5-large
 eeaa704	0.544148	-1	0.267464	0.484323	19.6	1310.470	keep	e5-base-v2+BM25+Qwen3-Reranker	64	220	1e-5	exp27 hybrid RRF(dense+BM25) >> Qwen3-Reranker top-100, new best MAP@100=0.2675 nDCG@10=0.5441	exp27-hybrid-fusion
+4558b8e	0.535806	0.313501	0.264871	0.477541	19.6	3009.789	discard	e5-base-v2+BM25+Qwen3-Reranker	128	220	1e-5	exp28 hybrid RRF top-1000 rerank: worse than top-100, reranker degrades with more candidates	exp28-hybrid-top1k

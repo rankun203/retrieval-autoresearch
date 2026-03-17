@@ -53,7 +53,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 ## Priority 4: Hybrid retrieval
 
 - [x] exp27: Dense(e5-base-v2) + BM25+Bo1 RRF fusion → Qwen3-Reranker top-100 → MAP@100=0.2675, nDCG@10=0.5441, recall@100=0.4843 ← new best
-- [ ] Try RRF top-200/1000 reranking for more recall headroom
+- [x] exp28: RRF top-1000 reranking → MAP@100=0.2649, nDCG@10=0.5358 (WORSE than top-100). Reranker degrades with more candidates — top-100 is optimal cutoff
 - [ ] Try linear interpolation instead of RRF
 - [ ] SPLADE-style sparse augmentation on top of dense
 

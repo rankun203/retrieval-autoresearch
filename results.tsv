@@ -38,3 +38,4 @@ eeaa704	0.544148	-1	0.267464	0.484323	19.6	1310.470	keep	e5-base-v2+BM25+Qwen3-R
 eca2288	0.579035	-1	0.314915	0.557738	19.6	1331.121	keep	e5-base-v2+BM25+Qwen3-Reranker	64	220	1e-5	exp30 2-phase HN mining: dense MAP@100=0.236 (up from 0.180), hybrid+rerank MAP@100=0.3149 new best	exp30-hard-negatives
 eca2288	0.592074	0.389586	0.327523	0.557730	19.6	N/A	keep	e5-base-v2-HN+BM25-RRF	128	220	1e-5	exp30 hard neg mining + RRF fusion (no rerank): MAP@100=0.3275 NEW BEST, milestone 3 achieved	exp30-hard-negatives
 eca2288	0.579035	-1	0.314914	0.557738	19.6	N/A	discard	e5-base-v2-HN+BM25+Qwen3	128	220	1e-5	exp30 +Qwen3-Reranker top-100: WORSE than RRF alone (reranker degrades good fusion)	exp30-hard-negatives
+fdde425	0.554847	-1	0.286110	0.509136	38.1	N/A	discard	e5-base-v2-HN-gradaccum+BM25-RRF	128x4	220	2e-5	exp31 grad accum (eff batch=512) + cosine LR: worse than exp30 baseline	exp31-grad-accum

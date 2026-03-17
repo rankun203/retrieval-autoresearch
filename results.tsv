@@ -23,4 +23,3 @@ cd0a8a8	0.474329	-1	0.199575	0.352506	19.6	-1	keep	e5-base-v2+reranker	64	220	1e
 4f4d10a	0.000000	-1	0.000000	0.000000	0.0	-1	crash	e5-base-v2+reranker	64	220	1e-5	exp19: RERANK_TOP_K=200 killed mid-encoding	mar16
 43af4ae	0.477463	-1	0.210587	0.380399	19.6	-1	keep	e5-base-v2+reranker	64	220	1e-5	exp19: RERANK_TOP_K=200 new best nDCG@10	mar16
 84bd149	0.466202	0.296779	0.250376	0.452732	0.0	31.639	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=30)	exp20-bm25-best
-N/A	0.465313	0.242698	0.445038	0.0	16.3	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=1.2,b=0.4)+Bo1(fbDocs=5,fbTerms=10)	exp20-bm25-tuning

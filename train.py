@@ -1,8 +1,9 @@
 """
-exp23-qwen3-reranker: Rerank BM25+Bo1 top-K results using Qwen3-Reranker-0.6B.
+exp24-qwen3-reranker-top1k: Rerank BM25+Bo1 top-1000 results using Qwen3-Reranker-0.6B.
 
 Uses the Qwen3-Reranker-0.6B model (LLM-based reranker) with yes/no token logits.
-Reads existing BM25+Bo1 TREC run file, reranks top-K per query, evaluates.
+Reads existing BM25+Bo1 TREC run file, reranks top-1000 per query, evaluates.
+Same as exp23 but with RERANK_TOP_K=1000 (was 100) for higher recall ceiling.
 """
 
 import os
@@ -16,12 +17,12 @@ from prepare import load_robust04, evaluate_run, write_trec_run
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-RERANK_TOP_K = 100  # rerank top-K from BM25+Bo1
+RERANK_TOP_K = 1000  # rerank top-1000 from BM25+Bo1 (was 100 in exp23)
 BATCH_SIZE = 4      # batch size for reranking (docs are long)
 MAX_CONTENT_TOKENS = 512  # max tokens for the content portion (query+doc)
 BM25_RUN_FILE = "../../runs/exp22-bm25-prf/exp22-bm25-prf.run"
 MODEL_NAME = "Qwen/Qwen3-Reranker-0.6B"
-WORKTREE_NAME = "exp23-qwen3-reranker"
+WORKTREE_NAME = "exp24-qwen3-reranker-top1k"
 TASK_INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
 
 t_start = time.time()

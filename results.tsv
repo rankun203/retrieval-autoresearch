@@ -1,8 +1,6 @@
 commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_len	lr	description	worktree
 d30ed59	0.352147	-1	0.126045	-1	8.6	-1	keep	MiniLM-L6-v2	128	180	2e-5	baseline: MiniLM-L6-v2 InfoNCE batch=128	mar16
 941a194	0.397801	-1	0.149852	-1	16.7	-1	keep	e5-small-v2	128	180	2e-5	exp1: e5-small-v2 with query/passage prefixes	mar16
-484cbec	0.000000	-1	0.000000	0.000000	0.0	-1	crash	e5-small-v2	256	180	2e-5	exp2: batch=256 OOM on GPU	mar16
-964fb3d	0.000000	-1	0.000000	0.000000	0.0	-1	crash	e5-base-v2	128	180	2e-5	exp3: e5-base-v2 OOM during training	mar16
 6f690b6	0.395621	-1	-1	-1	16.7	-1	discard	e5-small-v2	128	180	2e-5	exp4: cosine warmup LR (below exp1)	mar16
 1a41705	0.399620	-1	-1	-1	16.7	-1	keep	e5-small-v2	128	180	2e-5	exp5: temperature=0.05	mar16
 b659752	0.410873	-1	-1	-1	16.7	-1	keep	e5-small-v2	128	180	2e-5	exp6: symmetric in-batch negatives	mar16
@@ -12,14 +10,10 @@ fc8a250	0.417699	-1	-1	-1	17.1	-1	discard	e5-base-v2	64	180	1e-5	exp9: cosine wa
 52ee2f7	0.424684	-1	-1	-1	17.1	-1	discard	e5-base-v2	64	180	1e-5	exp10: weight_decay=0.1	mar16
 e5f7b73	0.419806	-1	-1	-1	17.1	-1	discard	e5-base-v2	64	180	1e-5	exp11: CLS pooling	mar16
 76e671c	0.436490	-1	-1	-1	19.6	-1	keep	e5-base-v2	64	220	1e-5	exp12: MAX_DOC_LEN=220	mar16
-c7f96f6	0.000000	-1	0.000000	0.000000	0.0	-1	crash	e5-base-v2	64	256	1e-5	exp13: MAX_DOC_LEN=256 OOM	mar16
-cf1e234	0.000000	-1	0.000000	0.000000	0.0	-1	crash	e5-base-v2	64	240	1e-5	exp14: MAX_DOC_LEN=240 OOM	mar16
 e3143f3	0.442095	-1	0.177225	-1	19.6	-1	keep	e5-base-v2	64	220	1e-5	exp15: MAX_QUERY_LEN=96 for verbose TREC topics	mar16
 6c43511	0.009538	-1	0.001756	-1	4.8	-1	discard	Qwen3-Embed-0.6B	32	220	N/A	expA: Qwen3-Embedding zero-shot BROKEN	mar16
-5bc4e88	0.000000	-1	0.000000	0.000000	0.0	-1	crash	Qwen3-Embed-0.6B	32	220	N/A	expA-fixed: killed mid-encoding	mar16
 cd0a8a8	0.474329	-1	0.199575	0.352506	19.6	-1	keep	e5-base-v2+reranker	64	220	1e-5	exp16: cross-encoder rerank top-100	mar16
 2f33483	0.474456	-1	0.221984	0.411108	19.6	2408.149	keep	e5-base-v2+reranker	64	220	1e-5	exp17: rerank top-1000 instead of top-100	mar16
 44f82e2	0.441192	-1	0.197063	0.386714	19.6	2784.745	discard	e5-base-v2+L12-reranker	64	220	1e-5	exp18: L-12 reranker worse than L-6	mar16
-4f4d10a	0.000000	-1	0.000000	0.000000	0.0	-1	crash	e5-base-v2+reranker	64	220	1e-5	exp19: RERANK_TOP_K=200 killed mid-encoding	mar16
 43af4ae	0.477463	-1	0.210587	0.380399	19.6	-1	keep	e5-base-v2+reranker	64	220	1e-5	exp19: RERANK_TOP_K=200 new best nDCG@10	mar16
 84bd149	0.466202	0.296779	0.250376	0.452732	0.0	31.639	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=30)	exp20-bm25-best

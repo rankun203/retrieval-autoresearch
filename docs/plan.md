@@ -5,17 +5,20 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-- **exp17**: e5-base-v2 fine-tuned + cross-encoder/ms-marco-MiniLM-L-6-v2 rerank top-1000
+- **exp22 (BM25+Bo1)**: pyterrier BM25(k1=0.9,b=0.4) + Bo1(fbDocs=5,fbTerms=30)
+- MAP@100 = 0.2504 | MAP@1000 = 0.2968 | nDCG@10 = 0.4662 | recall@100 = 0.4527
+- **exp17 (best dense)**: e5-base-v2 fine-tuned + cross-encoder/ms-marco-MiniLM-L-6-v2 rerank top-1000
 - MAP@100 = 0.2220 | nDCG@10 = 0.4745 | recall@100 = 0.4111
 
 ## Targets
 
 - [x] MAP@100 ≥ 0.20 (milestone 1) — achieved exp17: 0.2220
-- [ ] MAP@100 > 0.2746 (beat BM25+PRF baseline)
+- [x] MAP@100 > 0.25 (milestone 2) — achieved exp22 BM25+Bo1: 0.2504
+- [ ] MAP@100 > 0.30 (beat BM25+PRF MAP@100 significantly)
 
 ## Basic methods
 
-- [ ] BM25+PRF baseline from my previous experiments: bm25_bo1_fbdocs:3&fbterms:10, should score MAP=0.2745699377309016, tell me otherwise
+- [x] BM25+PRF baseline: exp22 pyterrier BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=30) → MAP@100=0.2504, MAP@1000=0.2968
 - [ ] Utilize query variants to improve query performance (for evaluation, besides standard metrics, also look at good, medium and bad quality title queries and respective results)
 
 ## Priority 1: Cross-encoder reranking
@@ -23,7 +26,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - [x] exp16: e5-base-v2 + MiniLM-L-6-v2 rerank top-100 → MAP=0.1996
 - [x] exp17: rerank top-1000 → MAP=0.2220 ← current best
 - [x] exp18: MiniLM-L-12-v2 reranker → MAP=0.1971 (worse, discarded)
-- [ ] Try `cross-encoder/ms-marco-electra-base` (larger, potentially better)
+- [x] exp21: cross-encoder/ms-marco-electra-base → SUSPICIOUS nDCG@10=0.075, model fails on long Robust04 docs despite working on short pairs
 - [ ] Try `Qwen/Qwen3-Reranker-0.6B` (LLM-based reranker)
 
 ## Priority 2: Better backbones

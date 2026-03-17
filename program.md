@@ -126,7 +126,9 @@ LOOP FOREVER:
    ```bash
    git add -A && git commit -m "exp-name: description of what this tries"
    ```
-4. Run: `uv run train.py > run.log 2>&1`
+4. Run: `PYTHONUNBUFFERED=1 uv run train.py > run.log 2>&1`
+   Use `PYTHONUNBUFFERED=1` so progress prints flush immediately to `run.log`.
+   All print statements in the experiment code should use `flush=True` for real-time progress tracking.
 5. Read results: `grep "^ndcg@10:\|^map@1000:\|^map@100:\|^recall@100:\|^peak_vram_mb:" run.log`
 6. If empty → crashed. Run `tail -n 50 run.log` for stack trace. Fix if trivial, else skip.
 7. **Sanity-check results**: If a result is far off from what you'd expect (e.g. near-zero for a known-good model, or much worse than baseline), do NOT just log and move on. Instead:

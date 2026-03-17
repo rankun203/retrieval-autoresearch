@@ -98,7 +98,25 @@ N/A	0.461897	-1	0.242096	0.441252	0.0	17.0	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9
 N/A	0.460841	-1	0.243232	0.444675	0.0	23.0	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=5,fbTerms=20)	exp20-bm25-tuning
 N/A	0.462995	-1	0.243372	0.444925	0.0	30.1	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=5,fbTerms=30)	exp20-bm25-tuning
 N/A	0.461784	-1	0.242074	0.443828	0.0	48.0	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=5,fbTerms=50)	exp20-bm25-tuning
-N/A	0.437532	0.235361	0.441324	0.0	17.1	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=10)	exp20-bm25-tuning
-N/A	0.439334	0.239183	0.446589	0.0	22.3	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=20)	exp20-bm25-tuning
-N/A	0.435994	0.239377	0.448128	0.0	27.8	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=30)	exp20-bm25-tuning
-N/A	0.436751	0.237540	0.446213	0.0	43.9	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=50)	exp20-bm25-tuning
+N/A	0.437532	-1	0.235361	0.441324	0.0	17.1	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=10)	exp20-bm25-tuning
+N/A	0.439334	-1	0.239183	0.446589	0.0	22.3	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=20)	exp20-bm25-tuning
+N/A	0.435994	-1	0.239377	0.448128	0.0	27.8	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=30)	exp20-bm25-tuning
+N/A	0.436751	-1	0.237540	0.446213	0.0	43.9	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.3)+Bo1(fbDocs=10,fbTerms=50)	exp20-bm25-tuning
+N/A	0.463261	-1	0.246083	0.447330	0.0	17.9	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=3,fbTerms=10)	exp20-bm25-tuning
+N/A	0.465906	-1	0.247637	0.449403	0.0	24.8	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=3,fbTerms=20)	exp20-bm25-tuning
+N/A	0.463682	-1	0.246735	0.449259	0.0	34.6	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=3,fbTerms=30)	exp20-bm25-tuning
+N/A	0.463430	-1	0.246514	0.448466	0.0	59.6	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=3,fbTerms=50)	exp20-bm25-tuning
+N/A	0.463099	-1	0.247585	0.449298	0.0	16.9	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=10)	exp20-bm25-tuning
+N/A	0.465668	-1	0.248830	0.452242	0.0	21.3	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=20)	exp20-bm25-tuning
+N/A	0.466202	-1	0.250376	0.452732	0.0	27.4	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=30)	exp20-bm25-tuning
+N/A	0.465901	-1	0.248909	0.452766	0.0	44.3	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=50)	exp20-bm25-tuning
+N/A	0.449440	-1	0.240603	0.447751	0.0	15.6	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=10,fbTerms=10)	exp20-bm25-tuning
+N/A	0.453657	0.245088	0.454337	0.0	20.1	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=10,fbTerms=20)	exp20-bm25-tuning
+N/A	0.452799	0.245753	0.451181	0.0	25.4	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=10,fbTerms=30)	exp20-bm25-tuning
+N/A	0.456886	0.246882	0.452429	0.0	40.0	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=10,fbTerms=50)	exp20-bm25-tuning
+N/A	0.461140	0.244501	0.450765	0.0	16.4	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.5)+Bo1(fbDocs=3,fbTerms=10)	exp20-bm25-tuning
+N/A	0.459430	0.246696	0.453118	0.0	23.4	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.5)+Bo1(fbDocs=3,fbTerms=20)	exp20-bm25-tuning
+N/A	0.460470	0.246766	0.454736	0.0	33.3	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.5)+Bo1(fbDocs=3,fbTerms=30)	exp20-bm25-tuning
+N/A	0.460816	0.246919	0.453557	0.0	58.6	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.5)+Bo1(fbDocs=3,fbTerms=50)	exp20-bm25-tuning
+N/A	0.460432	0.244787	0.449180	0.0	16.4	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.5)+Bo1(fbDocs=5,fbTerms=10)	exp20-bm25-tuning
+N/A	0.460593	0.248198	0.453040	0.0	21.1	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.5)+Bo1(fbDocs=5,fbTerms=20)	exp20-bm25-tuning

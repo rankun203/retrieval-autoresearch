@@ -107,16 +107,23 @@ LOOP FOREVER:
 
 1. Look at git state (current branch/commit).
 2. Plan an experimental change to `train.py` (or new helper files). Consult `docs/plan.md` for the prioritized experiment list and `docs/ir-survey-202603.md` for paper-backed ideas. Pick the highest-priority unchecked item from the plan.
-3. `git commit` your changes.
+3. **Commit changes BEFORE running** — every experiment must have a commit hash:
+   ```bash
+   git add -A && git commit -m "exp-name: description of what this tries"
+   ```
 4. Run: `uv run train.py > run.log 2>&1`
-5. Read results: `grep "^ndcg@10:\|^peak_vram_mb:" run.log`
+5. Read results: `grep "^ndcg@10:\|^map@1000:\|^map@100:\|^recall@100:\|^peak_vram_mb:" run.log`
 6. If empty → crashed. Run `tail -n 50 run.log` for stack trace. Fix if trivial, else skip.
-7. Log to results.tsv.
-8. If MAP@100 improved → keep commit. Cherry-pick or rebase improvements onto master so master always has the best code:
+7. **Log to results.tsv** (at project root, using the commit hash from step 3).
+8. **If improved** → keep the commit. Cherry-pick onto master:
    ```bash
    git -C /path/to/repo checkout master && git cherry-pick <commit> && git checkout -
    ```
-   If not → `git reset --hard HEAD~1`.
+9. **If not improved** → reset to discard changes (commit becomes orphan but is still reachable by hash):
+   ```bash
+   git reset --hard HEAD~1
+   ```
+   The results.tsv row still has the commit hash so you can always `git show <hash>` to see what was tried.
 
 **Timeout**: Each experiment should take ~12-15 minutes total. If it exceeds 25 minutes, kill and treat as failure.
 

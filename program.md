@@ -6,12 +6,12 @@ The primary metric is **MAP@100** — higher is better. We also track nDCG@10 an
 
 ## Setup
 
-1. **Agree on a run tag**: propose a tag based on today's date (e.g. `mar16`). Branch `autoresearch/<tag>` must not exist.
+1. **Name the experiment**: each experiment gets a unique name (e.g. `exp20-bm25-tuning`, `exp21-hybrid-rerank`). Branch `autoresearch/<name>` must not exist.
 2. **Create a worktree**: from the repo root, run:
    ```bash
-   git worktree add ./worktrees/<tag> -b autoresearch/<tag>
+   git worktree add ./worktrees/<name> -b autoresearch/<name>
    ```
-   All experiment work happens inside `./worktrees/<tag>/` — never touch the main working directory.
+   Each experiment gets its own worktree. All work happens inside `./worktrees/<name>/` — never touch the main working directory.
 3. **Read the in-scope files** (from inside the worktree): Read these for full context:
    - `README.md` — repository context.
    - `prepare.py` — fixed utilities: data loading, evaluation, MS-MARCO training stream. Do NOT modify.
@@ -83,7 +83,7 @@ Only change TIME_BUDGET if you see the same signal 2+ experiments in a row.
 
 After each completed run:
 1. **Save the log**: `mkdir -p logs && cp run.log logs/$(git rev-parse --short HEAD).log`
-2. **Append to results.tsv** (tab-separated, 10 columns):
+2. **Append to the root results.tsv** at the project root (NOT in the worktree). Use absolute path or `../../results.tsv` from worktree. Tab-separated, 12 columns:
 
 ```
 commit	ndcg@10	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_len	lr	description
@@ -99,7 +99,7 @@ commit	ndcg@10	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_le
 - lr: LR value (e.g. `1e-5`)
 - description: short text of what this experiment tried
 
-Do NOT commit results.tsv or logs/ (leave them untracked).
+Do NOT commit results.tsv or logs/ (leave them untracked). results.tsv lives at the project root, shared across all worktrees.
 
 ## The experiment loop
 
@@ -112,7 +112,11 @@ LOOP FOREVER:
 5. Read results: `grep "^ndcg@10:\|^peak_vram_mb:" run.log`
 6. If empty → crashed. Run `tail -n 50 run.log` for stack trace. Fix if trivial, else skip.
 7. Log to results.tsv.
-8. If MAP@100 improved → keep commit. If not → `git reset --hard HEAD~1`.
+8. If MAP@100 improved → keep commit. Cherry-pick or rebase improvements onto master so master always has the best code:
+   ```bash
+   git -C /path/to/repo checkout master && git cherry-pick <commit> && git checkout -
+   ```
+   If not → `git reset --hard HEAD~1`.
 
 **Timeout**: Each experiment should take ~12-15 minutes total. If it exceeds 25 minutes, kill and treat as failure.
 

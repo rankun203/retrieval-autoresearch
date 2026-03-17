@@ -86,11 +86,12 @@ After each completed run:
 2. **Append to results.tsv** (tab-separated, 10 columns):
 
 ```
-commit	ndcg@10	map@100	recall@100	memory_gb	status	encoder	batch	doc_len	lr	description
+commit	ndcg@10	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_len	lr	description
 ```
 - commit: 7-char short hash
 - ndcg@10, map@100, recall@100: from summary (use 0.000000 for crashes)
 - memory_gb: peak_vram_mb / 1024, rounded to .1f (use 0.0 for crashes)
+- eval_dur: eval_duration from summary (seconds with 3 decimal places, e.g. 834.123; use N/A for crashes)
 - status: `keep`, `discard`, or `crash`
 - encoder: short model name (e.g. `e5-base-v2`)
 - batch: BATCH_SIZE value
@@ -105,15 +106,7 @@ Do NOT commit results.tsv or logs/ (leave them untracked).
 LOOP FOREVER:
 
 1. Look at git state (current branch/commit).
-2. Plan an experimental change to `train.py` (or new helper files). Ideas:
-   - Different pretrained backbone (larger BERT, E5-small, etc.)
-   - Add cross-encoder re-ranking stage
-   - BM25 + dense hybrid (interpolate scores)
-   - Different pooling (CLS, mean, weighted mean)
-   - Larger batch size for more in-batch negatives
-   - Curriculum: start with BM25 negatives, switch to model-mined hard negatives mid-training
-   - SPLADE-style sparse regularization
-   - Knowledge distillation: use BM25 scores as soft labels
+2. Plan an experimental change to `train.py` (or new helper files). Consult `docs/plan.md` for the prioritized experiment list and `docs/ir-survey-202603.md` for paper-backed ideas. Pick the highest-priority unchecked item from the plan.
 3. `git commit` your changes.
 4. Run: `uv run train.py > run.log 2>&1`
 5. Read results: `grep "^ndcg@10:\|^peak_vram_mb:" run.log`

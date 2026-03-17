@@ -169,6 +169,7 @@ print(f"Training done: {step} steps, {total_training_time:.1f}s")
 # Index: encode Robust04 corpus
 # ---------------------------------------------------------------------------
 
+t_eval_start = time.time()
 print("Loading Robust04...")
 corpus, queries_dict, qrels = load_robust04()
 
@@ -227,6 +228,8 @@ for qi, qid in enumerate(query_ids):
 # ---------------------------------------------------------------------------
 
 metrics = evaluate_run(run, qrels)
+t_eval_end = time.time()
+eval_duration = t_eval_end - t_eval_start
 
 # ---------------------------------------------------------------------------
 # Summary
@@ -238,7 +241,7 @@ peak_vram_mb = torch.cuda.max_memory_allocated() / 1024 / 1024 if torch.cuda.is_
 print("---")
 print(f"ndcg@10:          {metrics['ndcg@10']:.6f}")
 print(f"map@100:          {metrics['map@100']:.6f}")
-print(f"recall@1000:      {metrics['recall@1000']:.6f}")
+print(f"recall@100:       {metrics['recall@100']:.6f}")
 print(f"training_seconds: {total_training_time:.1f}")
 print(f"total_seconds:    {t_end - t_start:.1f}")
 print(f"peak_vram_mb:     {peak_vram_mb:.1f}")
@@ -250,6 +253,7 @@ print(f"max_query_len:    {MAX_QUERY_LEN}")
 print(f"lr:               {LR}")
 print(f"temperature:      {TEMPERATURE}")
 print(f"num_docs_indexed: {len(doc_ids)}")
+print(f"eval_duration:    {eval_duration:.3f}")
 curve_str = "  ".join(f"{p}%:{l}" for p, l in loss_curve)
 print(f"loss_curve:       {curve_str}")
 # Budget assessment

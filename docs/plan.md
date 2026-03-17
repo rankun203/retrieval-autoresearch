@@ -1,0 +1,64 @@
+# Experiment Plan
+
+Prioritized list of experiments to try. Check off as completed.
+Reference: `docs/ir-survey-202603.md` for paper details and results.
+
+## Current best
+
+- **exp17**: e5-base-v2 fine-tuned + cross-encoder/ms-marco-MiniLM-L-6-v2 rerank top-1000
+- MAP@100 = 0.2220 | nDCG@10 = 0.4745 | recall@100 = 0.4111
+
+## Targets
+
+- [x] MAP@100 ≥ 0.20 (milestone 1) — achieved exp17: 0.2220
+- [ ] MAP@100 > 0.2746 (beat BM25+PRF baseline)
+
+## Basic methods
+
+- [ ] BM25+PRF baseline from my previous experiments: bm25_bo1_fbdocs:3&fbterms:10, should score MAP=0.2745699377309016, tell me otherwise
+- [ ] Utilize query variants to improve query performance (for evaluation, besides standard metrics, also look at good, medium and bad quality title queries and respective results)
+
+## Priority 1: Cross-encoder reranking
+
+- [x] exp16: e5-base-v2 + MiniLM-L-6-v2 rerank top-100 → MAP=0.1996
+- [x] exp17: rerank top-1000 → MAP=0.2220 ← current best
+- [x] exp18: MiniLM-L-12-v2 reranker → MAP=0.1971 (worse, discarded)
+- [ ] Try `cross-encoder/ms-marco-electra-base` (larger, potentially better)
+- [ ] Try `Qwen/Qwen3-Reranker-0.6B` (LLM-based reranker)
+
+## Priority 2: Better backbones
+
+- [ ] Fix Qwen3-Embedding-0.6B (EOS/pooling issue) — zero-shot then fine-tuned
+- [ ] `intfloat/e5-large-v2` with reduced batch (if fits in 23GB)
+- [ ] `BAAI/bge-base-en-v1.5` as alternative to e5
+
+## Priority 3: Training improvements
+
+- [ ] Hard negative mining: after initial training, use model to mine hard negatives from Robust04 corpus, then retrain
+- [ ] Knowledge distillation: use cross-encoder scores as soft labels for bi-encoder training
+- [ ] Gradient accumulation (2-4 steps) to simulate larger effective batch
+- [ ] Cosine LR decay (no warmup) — simple schedule
+
+## Priority 4: Hybrid retrieval
+
+- [ ] Dense + BM25 score interpolation (requires implementing BM25 scoring)
+- [ ] SPLADE-style sparse augmentation on top of dense
+
+## Priority 5: Advanced methods (from survey)
+
+- [ ] ColBERT-style late interaction (if memory allows)
+- [ ] Listwise reranking with LLM (RankGPT-style)
+- [ ] Two-stage curriculum: easy negatives → model-mined hard negatives
+- [ ] Document expansion: generate synthetic queries per document (docT5query-style)
+
+## Memory constraints (A10G, 23GB)
+
+- e5-base-v2: batch=64, encode_batch=256, doc_len≤220 → ~20GB
+- e5-large-v2: batch=16, encode_batch=64, doc_len≤180 → estimate ~22GB
+- Qwen3-0.6B: batch=32, encode_batch=128 → ~17GB
+- Cross-encoder reranking: free bi-encoder first, batch=16-32
+
+## Notes
+
+- Add experiment ideas here as they come up
+- Reference papers from `docs/ir-survey-202603.md` by cite_id

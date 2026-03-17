@@ -43,6 +43,21 @@ After training, the model encodes the full Robust04 corpus, builds a FAISS index
 
 **The goal: maximize MAP@100 on Robust04 test queries (249 topics, excluding qid 672).**
 
+## TREC Run Files
+
+Every experiment must produce a TREC-format run file at:
+```
+runs/<worktree_name>/<worktree_name>.run
+```
+
+Format: `qid Q0 docno rank score run_name` (standard trec_eval compatible).
+Use `write_trec_run()` from `prepare.py` to generate this file after retrieval/reranking, before evaluation.
+
+The `runs/` directory is gitignored (run files are large). Run files can be re-evaluated anytime with:
+```bash
+uv run evaluate.py --run runs/<name>/<name>.run --output-dir eval_results/
+```
+
 ## Output format
 
 The script always prints this summary at the end:

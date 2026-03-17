@@ -2,7 +2,7 @@
 
 This is an autonomous research platform for improving dense retrieval methods.
 The evaluation target is **Robust04** (TREC Robust 2004, BEIR version).
-The primary metric is **nDCG@10** — higher is better.
+The primary metric is **MAP@100** — higher is better. We also track nDCG@10 and recall@100.
 
 ## Setup
 
@@ -41,7 +41,7 @@ After training, the model encodes the full Robust04 corpus, builds a FAISS index
 - Modify `prepare.py`. The `evaluate_run()` function is the ground truth metric.
 - Install new packages or add dependencies.
 
-**The goal: maximize nDCG@10 on Robust04 test queries.**
+**The goal: maximize MAP@100 on Robust04 test queries (249 topics, excluding qid 672).**
 
 ## Output format
 
@@ -50,7 +50,7 @@ The script always prints this summary at the end:
 ---
 ndcg@10:          0.XXXXXX
 map@100:          0.XXXXXX
-recall@1000:      0.XXXXXX
+recall@100:      0.XXXXXX
 training_seconds: 600.1
 total_seconds:    NNN.N
 peak_vram_mb:     XXXXX.X
@@ -66,7 +66,7 @@ num_docs_indexed: NNNNNN
 
 Extract the key metrics:
 ```bash
-grep "^ndcg@10:\|^map@100:\|^recall@1000:\|^peak_vram_mb:\|^loss_curve:\|^budget_assessment:" run.log
+grep "^ndcg@10:\|^map@100:\|^recall@100:\|^peak_vram_mb:\|^loss_curve:\|^budget_assessment:" run.log
 ```
 
 The summary also includes:
@@ -86,10 +86,10 @@ After each completed run:
 2. **Append to results.tsv** (tab-separated, 10 columns):
 
 ```
-commit	ndcg@10	map@100	recall@1000	memory_gb	status	encoder	batch	doc_len	lr	description
+commit	ndcg@10	map@100	recall@100	memory_gb	status	encoder	batch	doc_len	lr	description
 ```
 - commit: 7-char short hash
-- ndcg@10, map@100, recall@1000: from summary (use 0.000000 for crashes)
+- ndcg@10, map@100, recall@100: from summary (use 0.000000 for crashes)
 - memory_gb: peak_vram_mb / 1024, rounded to .1f (use 0.0 for crashes)
 - status: `keep`, `discard`, or `crash`
 - encoder: short model name (e.g. `e5-base-v2`)
@@ -119,7 +119,7 @@ LOOP FOREVER:
 5. Read results: `grep "^ndcg@10:\|^peak_vram_mb:" run.log`
 6. If empty → crashed. Run `tail -n 50 run.log` for stack trace. Fix if trivial, else skip.
 7. Log to results.tsv.
-8. If nDCG@10 improved → keep commit. If not → `git reset --hard HEAD~1`.
+8. If MAP@100 improved → keep commit. If not → `git reset --hard HEAD~1`.
 
 **Timeout**: Each experiment should take ~12-15 minutes total. If it exceeds 25 minutes, kill and treat as failure.
 

@@ -155,11 +155,11 @@ def evaluate_run(run: dict, qrels: dict) -> dict:
     The primary metric is ndcg@10 — higher is better.
     """
     import pytrec_eval
-    measures = {"ndcg_cut_10", "map_cut_100", "recall_1000"}
+    measures = {"ndcg_cut_10", "map_cut_100", "recall_100"}
     evaluator = pytrec_eval.RelevanceEvaluator(qrels, measures)
     results = evaluator.evaluate(run)
     out = {}
-    for m_key, m_name in [("ndcg_cut_10", "ndcg@10"), ("map_cut_100", "map@100"), ("recall_1000", "recall@1000")]:
+    for m_key, m_name in [("ndcg_cut_10", "ndcg@10"), ("map_cut_100", "map@100"), ("recall_100", "recall@100")]:
         vals = [v[m_key] for v in results.values() if m_key in v]
         out[m_name] = float(np.mean(vals)) if vals else 0.0
     return out

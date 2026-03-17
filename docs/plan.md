@@ -5,6 +5,8 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
+- **exp30 (2-phase HN mining + Hybrid RRF + Qwen3-Reranker)**: e5-base-v2 trained with hard negative mining from Robust04, fused with BM25+Bo1 via RRF, reranked top-100 with Qwen3-Reranker-0.6B
+- MAP@100 = 0.3149 | nDCG@10 = 0.5790 | recall@100 = 0.5577 | dense-only MAP@100 = 0.2358
 - **exp27 (Hybrid RRF + Qwen3-Reranker-0.6B)**: dense(e5-base-v2) + BM25+Bo1 fused via RRF, reranked top-100 with Qwen3-Reranker-0.6B
 - MAP@100 = 0.2675 | nDCG@10 = 0.5441 | recall@100 = 0.4843
 - **exp24 (BM25+Bo1 + Qwen3-Reranker-0.6B top-1000)**: BM25+Bo1 top-1000 reranked with Qwen3-Reranker-0.6B
@@ -20,7 +22,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 - [x] MAP@100 ≥ 0.20 (milestone 1) — achieved exp17: 0.2220
 - [x] MAP@100 > 0.25 (milestone 2) — achieved exp22 BM25+Bo1: 0.2504
-- [ ] MAP@100 > 0.30 (beat BM25+PRF MAP@100 significantly)
+- [x] MAP@100 > 0.30 (beat BM25+PRF MAP@100 significantly) — achieved exp30: 0.3149
 
 ## Basic methods
 
@@ -45,7 +47,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Priority 3: Training improvements
 
-- [ ] Hard negative mining: after initial training, use model to mine hard negatives from Robust04 corpus, then retrain
+- [x] exp30: Hard negative mining: 2-phase (300s MS-MARCO + 300s mixed MS-MARCO/Robust04 HN) → dense MAP@100=0.236 (up from 0.180), hybrid+rerank MAP@100=0.3149 ← new best
 - [x] exp29: MarginMSE distillation → dense MAP@100=0.156 (worse than 0.180 baseline). Loss flat ~10.5, scaling broken. Discarded
 - [ ] Gradient accumulation (2-4 steps) to simulate larger effective batch
 - [ ] Cosine LR decay (no warmup) — simple schedule

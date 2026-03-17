@@ -46,7 +46,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 ## Priority 3: Training improvements
 
 - [ ] Hard negative mining: after initial training, use model to mine hard negatives from Robust04 corpus, then retrain
-- [ ] Knowledge distillation: use cross-encoder scores as soft labels for bi-encoder training
+- [x] exp29: MarginMSE distillation → dense MAP@100=0.156 (worse than 0.180 baseline). Loss flat ~10.5, scaling broken. Discarded
 - [ ] Gradient accumulation (2-4 steps) to simulate larger effective batch
 - [ ] Cosine LR decay (no warmup) — simple schedule
 

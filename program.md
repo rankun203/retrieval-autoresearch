@@ -177,10 +177,20 @@ Do NOT commit results.tsv (leave it untracked). It lives at the project root, sh
 LOOP FOREVER:
 
 1. Consult `docs/plan.md` for the prioritized experiment list and `docs/ir-survey-202603.md` for paper-backed ideas. Pick the highest-priority unchecked item.
-2. **Set up** a new worktree (see Setup above).
-3. **Run experiment rounds** (steps 1–6 above). Iterate within the worktree: modify code, commit, run, log, keep/discard. Repeat until the experiment direction is exhausted.
-4. **Close the worktree** (step 7 above).
-5. Go to 1.
+2. **Launch a new Agent** for the experiment. Each experiment runs in its own agent (subagent) so the main conversation stays responsive. The agent prompt must include:
+   - The experiment name and goal (from `docs/plan.md`)
+   - A directive to follow this `program.md` end-to-end: setup → experiment rounds → close worktree
+   - Any relevant context (current best scores, prior findings, model details from `docs/ir-survey-202603.md`)
+3. **Wait for the agent to finish**, then review its result summary.
+4. Go to 1.
+
+**Agent launch template** (adapt as needed):
+```
+Read program.md and follow the full experiment loop for experiment "<name>".
+Goal: <what this experiment tries>.
+Context: current best MAP@100=X.XXXX (<method>). See docs/plan.md and docs/ir-survey-202603.md for details.
+Run the experiment end-to-end: set up worktree, write/modify code, commit, run, log results, keep/discard, close worktree.
+```
 
 **Timeout**: Different pipelines have different runtimes:
 - Bi-encoder only: ~15 min (train + encode + eval)

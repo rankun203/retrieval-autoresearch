@@ -1,0 +1,42 @@
+Loading Robust04...
+  528,155 docs, 249 queries
+Building BM25 index for 528,155 documents...
+  Indexed 100,000/528,155 docs
+  Indexed 200,000/528,155 docs
+  Indexed 300,000/528,155 docs
+  Indexed 400,000/528,155 docs
+  Indexed 500,000/528,155 docs
+  Index built: 630,148 unique terms, avgdl=295.4, took 206.5s
+
+Stage 1: BM25 retrieval (k1=0.9, b=0.4)...
+  50/249 queries
+  100/249 queries
+  150/249 queries
+  200/249 queries
+  BM25 only: nDCG@10=0.447386, MAP@100=0.214564, MAP@1000=0.251994
+
+Stage 2: Bo1 PRF (fb_docs=5, fb_terms=30, fb_weight=0.5)...
+  50/249 queries
+  100/249 queries
+  150/249 queries
+  200/249 queries
+Stage 2 done.
+TREC run written: runs/exp22-bm25-prf/exp22-bm25-prf.run
+---
+ndcg@10:          0.454704
+map@1000:         0.288702
+map@100:          0.243335
+recall@100:       0.449916
+run_file:         runs/exp22-bm25-prf/exp22-bm25-prf.run
+training_seconds: 0.0
+total_seconds:    226.3
+peak_vram_mb:     0.0
+num_steps:        0
+encoder_model:    BM25+Bo1+stem
+num_docs_indexed: 528155
+eval_duration:    4.183
+bm25_params:      k1=0.9, b=0.4, k3=1000
+prf_params:       fb_docs=5, fb_terms=30, fb_weight=0.5
+bm25_only_map100: 0.214564
+bm25_only_map1000: 0.251994
+bm25_only_ndcg10: 0.447386

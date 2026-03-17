@@ -26,4 +26,4 @@ cf1e234	0.000000	-1	0.000000	0.000000	0.0	-1	crash	e5-base-v2	64	240	1e-5	exp14:
 b8c0bc1	0.437319	0.269425	0.230380	0.434467	0.0	57.298	discard	BM25+Bo1	N/A	N/A	N/A	BM25(k1=1.2,b=0.75)+Bo1(fbDocs=10,fbTerms=40) below target	exp22-bm25-prf
 d3bec56	0.454734	0.288659	0.243299	0.449876	0.0	2.600	keep	BM25+Bo1+stem	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=30)+Porter stem	exp22-bm25-prf
 cdebe77	0.075300	0.041200	0.014300	0.102800	19.6	2076.300	discard	e5-base-v2+electra-reranker	64	220	1e-5	SUSPICIOUS: electra-base reranker near-zero, model works on short pairs but fails on Robust04 long docs	exp21-electra-reranker
-e041fda	0.529164	0.255208	0.255208	0.452732	2.6	0.014	keep	Qwen3-Reranker-0.6B	4	512	N/A	BM25+Bo1 >> Qwen3-Reranker-0.6B top-100, new best MAP@100=0.2552 nDCG@10=0.5292	exp23-qwen3-reranker
+e041fda	0.529164	-1	0.255208	0.452732	2.6	0.014	keep	Qwen3-Reranker-0.6B	4	512	N/A	BM25+Bo1 >> Qwen3-Reranker-0.6B top-100, new best MAP@100=0.2552 nDCG@10=0.5292	exp23-qwen3-reranker

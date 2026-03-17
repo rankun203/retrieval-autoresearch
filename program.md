@@ -119,6 +119,7 @@ commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	bat
 ```
 - commit: 7-char short hash
 - ndcg@10, map@100, recall@100: from summary (use 0.000000 for crashes)
+- Use `-1` for any metric that is not a true value (e.g. map@1000 when only top-100 docs were retrieved/reranked — the number would equal map@100 but is not a real map@1000)
 - memory_gb: peak_vram_mb / 1024, rounded to .1f (use 0.0 for crashes)
 - eval_dur: eval_duration from summary (seconds with 3 decimal places, e.g. 834.123; use N/A for crashes)
 - status: `keep`, `discard`, or `crash`

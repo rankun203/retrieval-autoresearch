@@ -88,6 +88,16 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - Cross-encoder reranking: can keep bi-encoder in memory alongside reranker
 - ColBERT-style late interaction: feasible with token-level embeddings in memory
 
+## Diversity Analysis (exp37)
+
+- [x] exp37-diversity-analysis: Portfolio diversity study across 40 retrieval systems
+  - 40 systems qualify with MAP@100 >= 0.15 (5 new PyTerrier models: QL, TF-IDF, DPH, PL2, BM25-noPRF)
+  - Total unique relevant docs across all systems: 16,715 (vs ~17K total in qrels)
+  - Greedy portfolio (relevant docs): exp33-iter-hn (+14,363), exp35-paraphrase (+933), exp30-hard-negatives-dense (+658), exp36-qvariants-rerank-fused (+200), exp34-query-variants-dense (+151) — top 3 cover 95.4%
+  - Greedy portfolio (total docs): tfidf (+164K), exp30-hard-negatives-dense (+78K), exp25-e5-large-dense (+40K)
+  - Most diverse pairs: dense-only systems vs reranked systems have lowest Jaccard (~0.045)
+  - Key insight: exp33-iter-hn alone finds 86% of all retrievable relevant docs; adding 2 diverse systems covers 95%+
+
 ## Notes
 
 - Add experiment ideas here as they come up

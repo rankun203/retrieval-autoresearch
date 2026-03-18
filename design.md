@@ -1,41 +1,55 @@
-# exp33-iter-hn: 3-Phase Iterative Hard Negative Mining
+# mar16 Series: Dense Retrieval Hyperparameter Exploration
 
 ## Goal
-Improve dense retrieval quality by iteratively mining hard negatives from the target corpus (Robust04) and retraining, then fuse with BM25+Bo1 via RRF for maximum hybrid performance.
+Systematically explore encoder architectures, training hyperparameters, and reranking strategies to maximize dense retrieval performance on Robust04, starting from a MiniLM-L6-v2 baseline.
 
 ## Hypothesis
-Single-pass training on MS-MARCO produces a model that misses domain-specific difficult negatives in Robust04. By mining hard negatives with the current model, adding them to training, and repeating, each round produces a stronger model that discovers harder negatives. Three rounds should substantially improve dense retrieval quality over the 2-phase approach (exp30).
+A series of incremental improvements -- better encoder, tuned temperature, symmetric negatives, optimized sequence lengths, and cross-encoder reranking -- should compound to substantially outperform the initial baseline. Each change targets a specific bottleneck identified in the previous iteration.
 
 ## Method
-- **Phase 1 (200s)**: Train e5-base-v2 on MS-MARCO with InfoNCE loss (symmetric in-batch negatives)
-- **Mine round 1**: Encode all 528K Robust04 docs, retrieve top-100 per query with FAISS, collect hard negatives (top-ranked non-relevant docs) and positives (top-ranked relevant docs)
-- **Phase 2 (200s)**: Mixed training — 70% MS-MARCO batches + 30% Robust04 hard negative batches
-- **Mine round 2**: Re-encode with improved model, mine NEW hard negatives (harder than round 1)
-- **Phase 3 (200s)**: Mixed training with round-2 hard negatives
-- **Evaluate**: Encode corpus, build FAISS index, retrieve top-1000, fuse with BM25+Bo1 via RRF (k=60)
+Iterative experimentation on a bi-encoder trained with InfoNCE loss on MS-MARCO triples, evaluated on Robust04 (249 topics). Each experiment modifies one or two variables from the previous best, following a systematic sweep:
+1. **Encoder selection**: MiniLM-L6-v2 -> e5-small-v2 (with query/passage prefixes) -> e5-base-v2
+2. **Loss function tuning**: temperature from 0.02 to 0.05, symmetric in-batch negatives
+3. **Learning rate**: 2e-5 -> 1e-5 (conservative fine-tuning)
+4. **Sequence lengths**: MAX_DOC_LEN 180->220, MAX_QUERY_LEN 64->96 (for verbose TREC topics)
+5. **Cross-encoder reranking**: MiniLM-L-6-v2 cross-encoder on top-K dense results (K=100, 1000, 200)
 
-## Key parameters
-- Encoder: intfloat/e5-base-v2 (mean pooling)
-- Batch size: 128, LR: 1e-5, temperature: 0.05
+## Key parameters (final best configuration, exp19)
+- Encoder: intfloat/e5-base-v2 (mean pooling, 768-dim)
+- Batch size: 64, LR: 1e-5, temperature: 0.05
 - MAX_QUERY_LEN: 96, MAX_DOC_LEN: 220
-- Mining: top-100 candidates, 10 hard negatives per query
-- Robust04 batch ratio: 30% during HN phases
-- RRF k=60 for BM25+dense fusion
-- Total training budget: 600s (200s × 3 phases)
+- Symmetric InfoNCE loss (bidirectional query-passage and passage-query)
+- Cross-encoder reranker: cross-encoder/ms-marco-MiniLM-L-6-v2, RERANK_TOP_K=200
+- Training budget: 600s on MS-MARCO triples
+- FAISS flat inner product index on GPU
 
 ## Expected outcome
-- Dense-only MAP@100: ~0.28-0.32 (up from exp30's 0.2358 with 2-phase mining)
-- Hybrid RRF MAP@100: ~0.34-0.36 (up from exp30's 0.3275)
-- Each mining round should show diminishing but positive returns
+- Progressive improvement from each change
+- Cross-encoder reranking should give the largest single boost (rerankers are stronger than bi-encoders)
 
 ## Baseline comparison
-- exp30 (2-phase HN mining): dense MAP@100=0.2358, hybrid MAP@100=0.3275
-- exp15 (no HN mining): dense MAP@100=0.1772
-- BM25+Bo1 baseline: MAP@100=0.2504
+- Starting point: MiniLM-L6-v2, batch=128, temp=0.02, no prefixes, no reranking
 
 ## Results
-- Dense-only MAP@100=0.3152 (up from 0.2358, +34% over exp30)
-- Hybrid RRF MAP@100=0.3483, MAP@1000=0.4147 — **NEW BEST**
-- nDCG@10=0.6333, recall@100=0.5758
-- Phase 3 added +0.08 to dense MAP vs 2-phase approach
-- Loss curve healthy: spiky on R04 HN batches (expected) but converging
+
+| Exp | Change | nDCG@10 | MAP@100 | Status |
+|-----|--------|---------|---------|--------|
+| baseline | MiniLM-L6-v2 InfoNCE batch=128 | 0.3521 | 0.1260 | keep |
+| exp1 | e5-small-v2 + query/passage prefixes | 0.3978 | 0.1499 | keep |
+| exp5 | temperature=0.05 | 0.3996 | - | keep |
+| exp6 | symmetric in-batch negatives | 0.4109 | - | keep |
+| exp7 | LR=1e-5 | 0.4129 | - | keep |
+| exp8 | e5-base-v2 batch=64 | 0.4256 | - | keep |
+| exp12 | MAX_DOC_LEN=220 | 0.4365 | - | keep |
+| exp15 | MAX_QUERY_LEN=96 | 0.4421 | 0.1772 | keep |
+| exp16 | cross-encoder rerank top-100 | 0.4743 | 0.1996 | keep |
+| exp17 | rerank top-1000 | 0.4745 | 0.2220 | keep |
+| exp19 | RERANK_TOP_K=200 | 0.4775 | 0.2106 | keep |
+
+Key findings:
+- Encoder upgrade (MiniLM -> e5-small -> e5-base) gave the largest cumulative dense-only gain
+- Symmetric in-batch negatives and temperature tuning each added ~1-2% nDCG@10
+- Longer sequence lengths helped significantly for Robust04's verbose newswire documents
+- Cross-encoder reranking boosted nDCG@10 from 0.442 to 0.477 (+8%)
+- Top-1000 reranking improved MAP@100 (0.222 vs 0.200) but top-200 was best for nDCG@10
+- Several experiments were discarded: cosine warmup, weight decay, CLS pooling, L-12 reranker

@@ -64,7 +64,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Priority 5: Advanced methods (from survey)
 
-- [x] exp32: ColBERT MaxSim re-scoring on FAISS top-1000 → fused MAP@100=0.304 (below exp30 0.3275). MaxSim hurt vs mean-pooled — model not properly trained for token-level matching
+- [x] exp32: ColBERT late interaction (128d token embs, MaxSim rescore top-200) + 2-phase HN mining + BM25 RRF → fused MAP@100=0.3038 (below exp30 0.3275). ColBERT MaxSim=0.2079 worse than mean-pooled=0.2330. In-batch ColBERT loss unstable with R04 batches. Discarded
 - [ ] Listwise reranking with LLM (RankGPT-style)
 - [ ] Two-stage curriculum: easy negatives → model-mined hard negatives
 - [ ] Document expansion: generate synthetic queries per document (docT5query-style)

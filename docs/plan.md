@@ -34,6 +34,9 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 - [x] BM25+PRF baseline: exp22 pyterrier BM25(k1=0.9,b=0.4)+Bo1(fbDocs=5,fbTerms=30) → MAP@100=0.2504, MAP@1000=0.2968
 - [ ] Utilize query variants to improve query performance (for evaluation, besides standard metrics, also look at good, medium and bad quality title queries and respective results)
+  - [x] exp35-qvariants: BM25+Bo1 + paraphrase variants (Qwen3.5-4B, no thinking) + RRF → MAP@100=0.2754 (above BM25 0.2504, +10%). Query2doc strategy crashed (LLM leaked chain-of-thought into variants). Transformers generate() too slow for 249 queries.
+  - [ ] exp35-simple-qvariants: BM25+Bo1 + all variant strategies (para+q2d+decomp) via vLLM with thinking → in progress
+  - [ ] exp34-query-variants: Current best (3-phase HN + BM25 RRF) + query variants via vLLM with thinking → in progress
 
 ## Priority 1: Cross-encoder reranking
 

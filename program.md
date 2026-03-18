@@ -38,7 +38,12 @@ After training, the model encodes the full Robust04 corpus, builds a FAISS index
 
 **What you CANNOT do:**
 - Modify `prepare.py`. The `evaluate_run()` function is the ground truth metric.
-- Install new packages or add dependencies.
+- Add dependencies to `pyproject.toml` — it's shared across all experiments.
+
+**Temporary dependencies:** If an experiment needs an extra library, use `uv run --with <pkg>` instead of adding it to `pyproject.toml`. This installs the package only for that run. Update the entry point accordingly:
+```bash
+PYTHONUNBUFFERED=1 uv run --with colbert-ai train.py >> run.log 2>&1
+```
 
 **The goal: maximize MAP@100 on Robust04 test queries (249 topics, excluding qid 672).**
 

@@ -39,3 +39,5 @@ eca2288	0.579035	-1	0.314915	0.557738	19.6	1331.121	keep	e5-base-v2+BM25+Qwen3-R
 eca2288	0.592074	0.389586	0.327523	0.557730	19.6	N/A	keep	e5-base-v2-HN+BM25-RRF	128	220	1e-5	exp30 hard neg mining + RRF fusion (no rerank): MAP@100=0.3275 NEW BEST, milestone 3 achieved	exp30-hard-negatives
 eca2288	0.579035	-1	0.314914	0.557738	19.6	N/A	discard	e5-base-v2-HN+BM25+Qwen3	128	220	1e-5	exp30 +Qwen3-Reranker top-100: WORSE than RRF alone (reranker degrades good fusion)	exp30-hard-negatives
 fdde425	0.554847	-1	0.286110	0.509136	38.1	N/A	discard	e5-base-v2-HN-gradaccum+BM25-RRF	128x4	220	2e-5	exp31 grad accum (eff batch=512) + cosine LR: worse than exp30 baseline	exp31-grad-accum
+75773e6	0.578568	0.362993	0.303772	0.530942	12.5	N/A	discard	e5-base-v2-colbert+BM25-RRF	64	220	1e-5	exp32 ColBERT MaxSim re-score: MaxSim worse than mean-pooled, fused MAP@100=0.304 below exp30	exp32-colbert
+75773e6	0.578568	-1	0.303772	0.530942	12.5	902.932	discard	e5-base-v2	48	180	1e-5	ColBERT late interaction (128d token embs, MaxSim rescore top-200) + 2-phase HN mining + BM25 RRF. ColBERT MaxSim=0.2079 worse than mean-pooled=0.2330. Fused=0.3038 < exp30=0.3275	exp32-colbert

@@ -64,7 +64,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Priority 5: Advanced methods (from survey)
 
-- [ ] ColBERT-style late interaction (feasible with 46GB L40S)
+- [x] exp32: ColBERT MaxSim re-scoring on FAISS top-1000 → fused MAP@100=0.304 (below exp30 0.3275). MaxSim hurt vs mean-pooled — model not properly trained for token-level matching
 - [ ] Listwise reranking with LLM (RankGPT-style)
 - [ ] Two-stage curriculum: easy negatives → model-mined hard negatives
 - [ ] Document expansion: generate synthetic queries per document (docT5query-style)

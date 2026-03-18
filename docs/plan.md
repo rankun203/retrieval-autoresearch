@@ -69,7 +69,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - [x] exp27: Dense(e5-base-v2) + BM25+Bo1 RRF fusion → Qwen3-Reranker top-100 → MAP@100=0.2675, nDCG@10=0.5441, recall@100=0.4843 ← new best
 - [x] exp28: RRF top-1000 reranking → MAP@100=0.2649, nDCG@10=0.5358 (WORSE than top-100). Reranker degrades with more candidates — top-100 is optimal cutoff
 - [x] exp39-linear-interp: Linear interp alpha=0.6 beats RRF(k=60): MAP@100=0.3651 vs 0.3483 (+0.017). nDCG@10=0.6575 vs 0.6333. Best alpha=0.6 (dense-weighted). Score magnitudes informative for fusion.
-- [ ] SPLADE-style sparse augmentation on top of dense
+- [x] exp43-splade-augment: Pre-trained SPLADE zero-shot + 3-way fusion (dense+BM25+SPLADE). SPLADE standalone MAP@100=0.1955 (below both dense 0.3152 and BM25 0.2504). Best 3-way fusion = 0.3651 with gamma=0 (SPLADE weight=0), identical to 2-way baseline. SPLADE adds no unique signal. Discarded.
 
 ## Priority 5: Advanced methods (from survey)
 

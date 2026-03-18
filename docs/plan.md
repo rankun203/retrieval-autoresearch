@@ -5,6 +5,8 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
+- **exp39 (Linear interpolation fusion)**: exp33 dense + BM25+Bo1, linear interp alpha=0.6
+- MAP@100 = 0.3651 | MAP@1000 = 0.4286 | nDCG@10 = 0.6575 | recall@100 = 0.5733
 - **exp33 (3-phase iterative HN mining + Hybrid RRF)**: e5-base-v2 with 3 rounds of hard negative mining (200s*3), fused with BM25+Bo1 via RRF
 - MAP@100 = 0.3483 | nDCG@10 = 0.6333 | recall@100 = 0.5758 | dense-only MAP@100 = 0.3152
 - **exp30 (2-phase HN mining + Hybrid RRF, NO reranker)**: e5-base-v2 with hard negative mining, fused with BM25+Bo1 via RRF
@@ -66,7 +68,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 - [x] exp27: Dense(e5-base-v2) + BM25+Bo1 RRF fusion → Qwen3-Reranker top-100 → MAP@100=0.2675, nDCG@10=0.5441, recall@100=0.4843 ← new best
 - [x] exp28: RRF top-1000 reranking → MAP@100=0.2649, nDCG@10=0.5358 (WORSE than top-100). Reranker degrades with more candidates — top-100 is optimal cutoff
-- [ ] Try linear interpolation instead of RRF
+- [x] exp39-linear-interp: Linear interp alpha=0.6 beats RRF(k=60): MAP@100=0.3651 vs 0.3483 (+0.017). nDCG@10=0.6575 vs 0.6333. Best alpha=0.6 (dense-weighted). Score magnitudes informative for fusion.
 - [ ] SPLADE-style sparse augmentation on top of dense
 
 ## Priority 5: Advanced methods (from survey)

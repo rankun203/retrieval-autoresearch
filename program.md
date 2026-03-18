@@ -53,7 +53,7 @@ An experiment round is one full cycle: commit code, run, evaluate, log, decide k
 
 ### 1. Write experiment design and commit before running
 
-Every experiment must have an `experiment-design.md` in the worktree root describing:
+Every experiment must have an `design.md` in the worktree root describing:
 - **Goal**: What this experiment tries to achieve
 - **Hypothesis**: Why this should work
 - **Method**: High-level approach (what changes from the baseline)

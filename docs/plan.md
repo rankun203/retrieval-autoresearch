@@ -80,6 +80,15 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 - [ ] Agentic retrieval with Qwen3.5-9B: multi-round iterative retrieval where LLM examines top docs each round, scores relevance, generates new aspect-exploring queries, accumulates ~100 high-quality docs. Inspired by PRISM, SmartSearch, IRCoT. Track eval_dur carefully — heaviest pipeline.
 
+## Diversity / Pooling Analysis
+
+- [x] exp37: Diversity analysis across 40 retrieval systems (5 new PyTerrier baselines: QL, TF-IDF, DPH, PL2, BM25-noPRF)
+  - Greedy portfolio for max relevant docs: exp33-iter-hn (82.5%) → +exp35-paraphrase (+5.3%) → +exp30-HN-dense (+3.8%) → +exp36-fused (+1.2%) → +exp34-dense (+0.8%) = 93.6% of all relevant docs with just 5 systems
+  - For max total unique docs: TF-IDF (164K) → +exp30-HN-dense (+78K) → +exp25-e5-large-dense (+40K) = 283K unique docs with 3 systems
+  - Dense systems contribute the most unique docs vs sparse (low Jaccard ~0.25-0.28 with best system)
+  - Sparse variants (QL, DPH, TF-IDF, PL2, BM25) have high mutual overlap — diminishing returns adding more
+  - Query variant systems (exp35-paraphrase) are 2nd best for unique relevant doc discovery after best system
+
 ## Memory constraints (L40S, 46GB)
 
 - e5-base-v2: batch=128, encode_batch=512, doc_len≤256 → ~20GB (plenty of headroom)

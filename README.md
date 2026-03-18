@@ -4,19 +4,6 @@
 
 Autonomous retrieval research on Robust04 (TREC 2004). An AI agent iterates on retrieval pipelines — training bi-encoders, fusing dense + sparse retrieval, reranking, and mining hard negatives — to maximize **MAP@100** on 249 test queries over a 528K document corpus.
 
-## Current best
-
-**MAP@100 = 0.3275** (exp30: e5-base-v2 with hard negative mining + BM25+Bo1 RRF fusion)
-
-| Milestone | MAP@100 | Method |
-|-----------|---------|--------|
-| Baseline | 0.126 | MiniLM-L6-v2 bi-encoder |
-| Dense+rerank | 0.222 | e5-base-v2 + MiniLM cross-encoder rerank |
-| BM25+PRF | 0.250 | BM25(k1=0.9,b=0.4) + Bo1 query expansion |
-| LLM reranker | 0.260 | BM25+Bo1 + Qwen3-Reranker-0.6B |
-| Hybrid fusion | 0.268 | Dense + BM25 RRF fusion + Qwen3-Reranker |
-| **HN mining + hybrid** | **0.328** | **2-phase hard negative mining + RRF fusion** |
-
 ## How it works
 
 - **`prepare.py`** — fixed utilities: Robust04 download, data loading, MS-MARCO training stream, evaluation harness. **Do not modify.**

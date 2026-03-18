@@ -1,44 +1,41 @@
-# exp30-hard-negatives: 2-Phase Hard Negative Mining
+# exp33-iter-hn: 3-Phase Iterative Hard Negative Mining
 
 ## Goal
-Improve the dense retriever by mining hard negatives from the target corpus (Robust04) and using them for a second training phase, then evaluate with hybrid RRF fusion and optional reranking.
+Improve dense retrieval quality by iteratively mining hard negatives from the target corpus (Robust04) and retraining, then fuse with BM25+Bo1 via RRF for maximum hybrid performance.
 
 ## Hypothesis
-A bi-encoder trained only on MS-MARCO produces embeddings poorly calibrated for Robust04's domain. By using the phase-1 model to retrieve from Robust04 and collecting top-ranked non-relevant documents as hard negatives, phase-2 training can teach the model to distinguish difficult cases specific to the target corpus. This domain adaptation via hard negative mining should substantially improve dense retrieval quality.
+Single-pass training on MS-MARCO produces a model that misses domain-specific difficult negatives in Robust04. By mining hard negatives with the current model, adding them to training, and repeating, each round produces a stronger model that discovers harder negatives. Three rounds should substantially improve dense retrieval quality over the 2-phase approach (exp30).
 
 ## Method
-1. **Phase 1 (300s)**: Train e5-base-v2 on MS-MARCO with InfoNCE loss (symmetric in-batch negatives)
-2. **Mine hard negatives**: Encode all 528K Robust04 docs with phase-1 model, retrieve top-100 per query, collect non-relevant docs as hard negatives (10 per query) and relevant docs as positives
-3. **Phase 2 (300s)**: Continue training with mixed batches -- 70% MS-MARCO + 30% Robust04 hard negative triples (query, relevant doc, hard negative doc)
-4. **Evaluate**: Encode corpus with phase-2 model, build FAISS index, retrieve top-1000
-5. **Fuse with BM25+Bo1** via RRF (k=60) and optionally rerank top-100 with Qwen3-Reranker
+- **Phase 1 (200s)**: Train e5-base-v2 on MS-MARCO with InfoNCE loss (symmetric in-batch negatives)
+- **Mine round 1**: Encode all 528K Robust04 docs, retrieve top-100 per query with FAISS, collect hard negatives (top-ranked non-relevant docs) and positives (top-ranked relevant docs)
+- **Phase 2 (200s)**: Mixed training — 70% MS-MARCO batches + 30% Robust04 hard negative batches
+- **Mine round 2**: Re-encode with improved model, mine NEW hard negatives (harder than round 1)
+- **Phase 3 (200s)**: Mixed training with round-2 hard negatives
+- **Evaluate**: Encode corpus, build FAISS index, retrieve top-1000, fuse with BM25+Bo1 via RRF (k=60)
 
 ## Key parameters
-- Encoder: intfloat/e5-base-v2, batch=64, LR=1e-5, temp=0.05
-- Phase 1: 300s MS-MARCO, Phase 2: 300s mixed (total 600s)
-- Mining: top-100 candidates, 10 hard negatives per query, top-3 hardest per positive
-- ROBUST04_BATCH_RATIO: 0.3 (30% of phase-2 batches from Robust04)
+- Encoder: intfloat/e5-base-v2 (mean pooling)
+- Batch size: 128, LR: 1e-5, temperature: 0.05
+- MAX_QUERY_LEN: 96, MAX_DOC_LEN: 220
+- Mining: top-100 candidates, 10 hard negatives per query
+- Robust04 batch ratio: 30% during HN phases
 - RRF k=60 for BM25+dense fusion
-- Reranker: Qwen/Qwen3-Reranker-0.6B, RERANK_TOP_K=100
+- Total training budget: 600s (200s × 3 phases)
 
 ## Expected outcome
-- Dense-only MAP@100 improvement over exp15 (0.1772) from domain adaptation
-- Hybrid RRF MAP@100 should exceed exp27 (0.2675)
+- Dense-only MAP@100: ~0.28-0.32 (up from exp30's 0.2358 with 2-phase mining)
+- Hybrid RRF MAP@100: ~0.34-0.36 (up from exp30's 0.3275)
+- Each mining round should show diminishing but positive returns
 
 ## Baseline comparison
-- exp27 (hybrid RRF + Qwen3-Reranker): MAP@100=0.2675, nDCG@10=0.5441
-- exp15 (dense-only, no HN mining): MAP@100=0.1772
-- BM25+Bo1 (exp22): MAP@100=0.2504
+- exp30 (2-phase HN mining): dense MAP@100=0.2358, hybrid MAP@100=0.3275
+- exp15 (no HN mining): dense MAP@100=0.1772
+- BM25+Bo1 baseline: MAP@100=0.2504
 
 ## Results
-Three evaluation configurations from the same trained model:
-
-1. **Dense-only**: MAP@100=0.2358 (+33% over exp15's 0.1772, confirming HN mining helps dense)
-2. **Hybrid RRF (no rerank)**: MAP@100=0.3275, nDCG@10=0.5921, recall@100=0.5577 -- **NEW BEST**, milestone 3 achieved
-3. **Hybrid RRF + Qwen3-Reranker top-100**: MAP@100=0.3149 -- WORSE than RRF alone (reranker degrades good fusion)
-
-Key findings:
-- Hard negative mining dramatically improved the dense retriever (+33% MAP@100)
-- The improved dense model made RRF fusion much more effective (0.3275 vs exp27's 0.2675)
-- Critically, the Qwen3-Reranker HURT performance when applied to the already-strong RRF fusion (0.3149 vs 0.3275), suggesting the reranker is not reliably better than RRF ranking for these candidates
-- This discovery shifted the project strategy away from reranking and toward improving the dense retriever directly
+- Dense-only MAP@100=0.3152 (up from 0.2358, +34% over exp30)
+- Hybrid RRF MAP@100=0.3483, MAP@1000=0.4147 — **NEW BEST**
+- nDCG@10=0.6333, recall@100=0.5758
+- Phase 3 added +0.08 to dense MAP vs 2-phase approach
+- Loss curve healthy: spiky on R04 HN batches (expected) but converging

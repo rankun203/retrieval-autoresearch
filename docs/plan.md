@@ -80,7 +80,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Priority 6: Agentic retrieval (see docs/agentic-retrieval-research.md)
 
-- [ ] Agentic retrieval with Qwen3.5-9B: multi-round iterative retrieval where LLM examines top docs each round, scores relevance, generates new aspect-exploring queries, accumulates ~100 high-quality docs. Inspired by PRISM, SmartSearch, IRCoT. Track eval_dur carefully — heaviest pipeline.
+- [x] exp44-agentic-retrieval: Qwen3-4B agentic retrieval (2 rounds, score top-20, generate sub-queries, BM25 retrieval). LLM scored 99.9% of docs as 2-3/3 (no discrimination). All strategies (boost, filter, sub-queries) <= baseline 0.3651. v1 LLM-dominant scoring MAP@100=0.2088 (coarse bins destroy ranking). v2 boost mode best=baseline. Small LLM cannot provide useful relevance signals on this task. Discarded.
 
 ## Diversity / Pooling Analysis
 

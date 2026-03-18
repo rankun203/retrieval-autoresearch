@@ -51,9 +51,17 @@ PYTHONUNBUFFERED=1 uv run --with colbert-ai train.py >> run.log 2>&1
 
 An experiment round is one full cycle: commit code, run, evaluate, log, decide keep/discard. Everything below happens inside the worktree.
 
-### 1. Commit before running
+### 1. Write experiment design and commit before running
 
-Every experiment must have a commit hash for traceability:
+Every experiment must have an `experiment-design.md` in the worktree root describing:
+- **Goal**: What this experiment tries to achieve
+- **Hypothesis**: Why this should work
+- **Method**: High-level approach (what changes from the baseline)
+- **Key parameters**: Model, batch size, training time, etc.
+- **Expected outcome**: What metrics we expect and why
+- **Baseline comparison**: What we're comparing against
+
+Commit the design alongside the code:
 ```bash
 git add -A && git commit -m "exp-name: description of what this tries"
 ```

@@ -1,35 +1,38 @@
-# exp22-bm25-prf: BM25 + Bo1 PRF Baseline via PyTerrier
+# exp23-qwen3-reranker: BM25+Bo1 with Qwen3-Reranker-0.6B (top-100)
 
 ## Goal
-Establish a strong sparse retrieval baseline using BM25 with Bo1 pseudo-relevance feedback (PRF) on Robust04, to compare against and complement the dense retrieval approach.
+Test whether a small LLM-based reranker (Qwen3-Reranker-0.6B) can improve the BM25+Bo1 first-stage results by reranking the top-100 candidates per query.
 
 ## Hypothesis
-Classical BM25 with query expansion via Bo1 PRF should provide a competitive baseline on Robust04, a traditional newswire collection well-suited to lexical methods. This baseline also provides first-stage candidates for neural reranking experiments.
+LLM-based rerankers with yes/no relevance judgment can capture deeper semantic relevance than BM25's lexical matching. Even a 0.6B parameter model should significantly improve precision metrics (nDCG@10, MAP@100) when applied to a strong BM25+Bo1 candidate pool. The thinking-mode architecture (with hidden chain-of-thought) may enable better reasoning about document relevance.
 
 ## Method
-- Use PyTerrier's native BM25 retriever with Bo1 query expansion
-- Pipeline: BM25 first pass -> Bo1 query expansion (top docs feedback) -> BM25 second pass with expanded query
-- Tuned BM25 parameters (k1, b) and Bo1 parameters (fbDocs, fbTerms) across two configurations
-- Added Porter stemming in the final configuration
+- Load precomputed BM25+Bo1 TREC run file from exp22
+- Keep top-100 candidates per query
+- Rerank using Qwen3-Reranker-0.6B: format each query-document pair as a relevance judgment prompt, extract P(yes) from the last token logits
+- Score = softmax(logit_yes, logit_no)[yes]
+- Prompt template uses system instruction for yes/no judgment with thinking mode enabled
 
 ## Key parameters
-- BM25: k1=0.9, b=0.4
-- Bo1 PRF: fbDocs=5, fbTerms=30
-- Porter stemming enabled (final config)
-- No GPU required (CPU-only pipeline)
+- Reranker: Qwen/Qwen3-Reranker-0.6B (float16)
+- RERANK_TOP_K: 100
+- Batch size: 4 (documents are long)
+- MAX_CONTENT_TOKENS: 512
+- Task instruction: "Given a web search query, retrieve relevant passages that answer the query"
 
 ## Expected outcome
-- MAP@100 in the 0.20-0.30 range (BM25+PRF is strong on Robust04)
-- Provides candidate pool for downstream reranking experiments
+- Significant nDCG@10 improvement over BM25+Bo1 baseline (0.4662)
+- MAP@100 improvement over BM25+Bo1 (0.2504)
+- Recall@100 unchanged (same candidate pool, just reordered)
 
 ## Baseline comparison
-- Dense-only baseline (exp15 e5-base-v2): MAP@100=0.1772, nDCG@10=0.4421
-- This is the first sparse retrieval experiment in the project
+- BM25+Bo1 (exp22): MAP@100=0.2504, nDCG@10=0.4662
+- Dense + cross-encoder reranker (exp19): MAP@100=0.2106, nDCG@10=0.4775
 
 ## Results
-Three configurations tested:
-1. **BM25(k1=0.9,b=0.4)+Bo1(5,30)**: MAP@100=0.2504, nDCG@10=0.4662, recall@100=0.4527 -- **keep**
-2. **BM25(k1=1.2,b=0.75)+Bo1(10,40)**: MAP@100=0.2304, nDCG@10=0.4373 -- discard (worse)
-3. **BM25(k1=0.9,b=0.4)+Bo1(5,30)+Porter stem**: MAP@100=0.2433, nDCG@10=0.4547 -- **keep** (stemming slightly worse MAP but kept for variant)
-
-Best config (MAP@100=0.2504) substantially outperformed dense-only retrieval (0.1772) and established the BM25+Bo1 baseline used by all subsequent reranking and hybrid experiments.
+- MAP@100=0.2552, nDCG@10=0.5292, recall@100=0.4527
+- New best nDCG@10 at the time (+13.5% over BM25+Bo1 alone)
+- MAP@100 slightly better than BM25+Bo1 (0.2552 vs 0.2504)
+- Recall@100 unchanged (same candidate pool, just reordered as expected)
+- VRAM usage: 2.6 GB (very efficient)
+- Reranking was extremely fast (0.014s evaluation time for 100 docs/query)

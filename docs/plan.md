@@ -37,6 +37,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
   - [x] exp35-qvariants: BM25+Bo1 + paraphrase variants (Qwen3.5-4B, no thinking) + RRF → MAP@100=0.2754 (above BM25 0.2504, +10%). Query2doc strategy crashed (LLM leaked chain-of-thought into variants). Transformers generate() too slow for 249 queries.
   - [ ] exp35-simple-qvariants: BM25+Bo1 + all variant strategies (para+q2d+decomp) via vLLM with thinking → in progress
   - [ ] exp34-query-variants: Current best (3-phase HN + BM25 RRF) + query variants via vLLM with thinking → in progress
+  - [ ] exp36-qvariants-rerank: BM25+Bo1 + query variants RRF + Qwen3-Reranker-0.6B top-100 → queue after exp35-simple results
 
 ## Priority 1: Cross-encoder reranking
 

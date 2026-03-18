@@ -74,7 +74,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 ## Priority 5: Advanced methods (from survey)
 
 - [x] exp32: ColBERT late interaction (128d token embs, MaxSim rescore top-200) + 2-phase HN mining + BM25 RRF → fused MAP@100=0.3038 (below exp30 0.3275). ColBERT MaxSim=0.2079 worse than mean-pooled=0.2330. In-batch ColBERT loss unstable with R04 batches. Discarded
-- [ ] Listwise reranking with LLM (RankGPT-style)
+- [x] Listwise reranking with LLM (RankGPT-style): exp41 Qwen3-4B listwise reranking (sliding window 20/10) on exp39 fused top-100 → MAP@100=0.3602 (below 0.3651 baseline, -0.005). nDCG@10=0.6456 (below 0.6575). 51min reranking time, 39GB VRAM. General 4B LLM not better than fusion-only for reranking.
 - [ ] Two-stage curriculum: easy negatives → model-mined hard negatives
 - [x] Document expansion: exp40 title boost (3x repeat) + 3-phase HN + linear interp → MAP@100=0.3573 (below 0.3651 baseline). Dense=0.3071 (below 0.3152). Title repetition wastes token budget in 220-token limit. OVERFIT/PLATEAU.
 

@@ -5,6 +5,8 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
+- **exp33 (3-phase iterative HN mining + Hybrid RRF)**: e5-base-v2 with 3 rounds of hard negative mining (200s*3), fused with BM25+Bo1 via RRF
+- MAP@100 = 0.3483 | nDCG@10 = 0.6333 | recall@100 = 0.5758 | dense-only MAP@100 = 0.3152
 - **exp30 (2-phase HN mining + Hybrid RRF, NO reranker)**: e5-base-v2 with hard negative mining, fused with BM25+Bo1 via RRF
 - MAP@100 = 0.3275 | MAP@1000 = 0.3896 | nDCG@10 = 0.5921 | recall@100 = 0.5577 | dense-only MAP@100 = 0.2358
 - NOTE: Qwen3-Reranker on this HURTS (MAP@100=0.3149) — fusion quality already high enough that reranker degrades it
@@ -51,6 +53,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Priority 3: Training improvements
 
+- [x] exp33: 3-phase iterative HN mining (200s*3) → dense MAP@100=0.3152 (up from 0.2358), hybrid RRF MAP@100=0.3483 (new best). Extra mining round helps dense +0.08, fused +0.02. Loss spiky on R04 batches (0.3→0.9 on HN batches)
 - [x] exp30: Hard negative mining: 2-phase (300s MS-MARCO + 300s mixed MS-MARCO/Robust04 HN) → dense MAP@100=0.236 (up from 0.180), hybrid RRF MAP@100=0.3275 (best w/o reranker), +reranker MAP@100=0.3149 (reranker hurts!)
 - [x] exp29: MarginMSE distillation → dense MAP@100=0.156 (worse than 0.180 baseline). Loss flat ~10.5, scaling broken. Discarded
 - [x] exp31: Gradient accum (4 steps, eff batch=512) + cosine LR (2e-5→0) → fused MAP@100=0.286 (worse than exp30 0.3275). Too aggressive — discarded

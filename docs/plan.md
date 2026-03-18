@@ -37,7 +37,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
   - [x] exp35-qvariants: BM25+Bo1 + paraphrase variants (Qwen3.5-4B, no thinking) + RRF → MAP@100=0.2754 (above BM25 0.2504, +10%). Query2doc strategy crashed (LLM leaked chain-of-thought into variants). Transformers generate() too slow for 249 queries.
   - [x] exp35-simple-qvariants: BM25+Bo1 + all variants (vLLM thinking) + RRF → MAP@100=0.2441 WORSE than baseline (0.2504). Thinking model generated ~15 para variants/topic (expected 5), diluting RRF with 44 runs. nDCG@10 improved 0.466→0.497 but MAP/recall dropped. Need to cap variants at 5.
   - [x] exp34-query-variants: Current best (3-phase HN + BM25 RRF) + query variants (vLLM, 2220 variants) → MAP@100=0.3285 WORSE than baseline 0.3450 (no variants). Multi-variant RRF (18 runs) dilutes fusion. Dense-only MAP@100=0.3085 (vs exp33 0.3152). Conclusion: query variants hurt both BM25-only and hybrid pipelines when added via RRF.
-  - [ ] exp36-qvariants-rerank: BM25+Bo1 + query variants RRF + Qwen3-Reranker-0.6B top-100 → queue after exp35-simple results
+  - [x] exp36-qvariants-rerank: BM25+Bo1 + query variants (para+q2d+decomp) RRF → Qwen3-Reranker top-100 → MAP@100=0.2667. Variants+rerank (0.2667) > variants-only (0.2635) > rerank-only (0.2537) > baseline (0.2504). Variants help recall (0.4527→0.4793), reranker helps precision. Still far below dense+BM25 hybrid (0.3483).
 
 ## Priority 1: Cross-encoder reranking
 

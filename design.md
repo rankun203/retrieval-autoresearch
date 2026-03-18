@@ -1,38 +1,40 @@
-# exp23-qwen3-reranker: BM25+Bo1 with Qwen3-Reranker-0.6B (top-100)
+# exp24-qwen3-reranker-top1k: BM25+Bo1 with Qwen3-Reranker-0.6B (top-1000)
 
 ## Goal
-Test whether a small LLM-based reranker (Qwen3-Reranker-0.6B) can improve the BM25+Bo1 first-stage results by reranking the top-100 candidates per query.
+Test whether reranking a larger candidate pool (top-1000 vs top-100) with Qwen3-Reranker-0.6B improves MAP by surfacing relevant documents ranked beyond position 100 in the BM25+Bo1 first stage.
 
 ## Hypothesis
-LLM-based rerankers with yes/no relevance judgment can capture deeper semantic relevance than BM25's lexical matching. Even a 0.6B parameter model should significantly improve precision metrics (nDCG@10, MAP@100) when applied to a strong BM25+Bo1 candidate pool. The thinking-mode architecture (with hidden chain-of-thought) may enable better reasoning about document relevance.
+BM25+Bo1 retrieves relevant documents beyond rank 100 that the reranker could promote into the top-100. By expanding the reranking pool from 100 to 1000, we increase the recall ceiling available to the reranker, which should improve MAP@100 (and enable meaningful MAP@1000 measurement).
 
 ## Method
+- Same pipeline as exp23 but with RERANK_TOP_K=1000 instead of 100
 - Load precomputed BM25+Bo1 TREC run file from exp22
-- Keep top-100 candidates per query
-- Rerank using Qwen3-Reranker-0.6B: format each query-document pair as a relevance judgment prompt, extract P(yes) from the last token logits
-- Score = softmax(logit_yes, logit_no)[yes]
-- Prompt template uses system instruction for yes/no judgment with thinking mode enabled
+- Keep top-1000 candidates per query
+- Rerank all 1000 using Qwen3-Reranker-0.6B with P(yes) scoring
+- Evaluate MAP@100, MAP@1000, nDCG@10, recall@100
 
 ## Key parameters
 - Reranker: Qwen/Qwen3-Reranker-0.6B (float16)
-- RERANK_TOP_K: 100
-- Batch size: 4 (documents are long)
+- RERANK_TOP_K: 1000 (up from 100 in exp23)
+- Batch size: 4
 - MAX_CONTENT_TOKENS: 512
-- Task instruction: "Given a web search query, retrieve relevant passages that answer the query"
+- ~249K query-doc pairs to rerank (249 queries x ~1000 docs)
 
 ## Expected outcome
-- Significant nDCG@10 improvement over BM25+Bo1 baseline (0.4662)
-- MAP@100 improvement over BM25+Bo1 (0.2504)
-- Recall@100 unchanged (same candidate pool, just reordered)
+- MAP@100 improvement over exp23 (0.2552) due to higher recall ceiling
+- First meaningful MAP@1000 measurement
+- nDCG@10 similar to exp23 (top-10 ranking mostly from top-100 candidates)
+- Longer runtime (~10x more documents to rerank)
 
 ## Baseline comparison
+- exp23 (rerank top-100): MAP@100=0.2552, nDCG@10=0.5292
 - BM25+Bo1 (exp22): MAP@100=0.2504, nDCG@10=0.4662
-- Dense + cross-encoder reranker (exp19): MAP@100=0.2106, nDCG@10=0.4775
 
 ## Results
-- MAP@100=0.2552, nDCG@10=0.5292, recall@100=0.4527
-- New best nDCG@10 at the time (+13.5% over BM25+Bo1 alone)
-- MAP@100 slightly better than BM25+Bo1 (0.2552 vs 0.2504)
-- Recall@100 unchanged (same candidate pool, just reordered as expected)
-- VRAM usage: 2.6 GB (very efficient)
-- Reranking was extremely fast (0.014s evaluation time for 100 docs/query)
+- MAP@100=0.2596, MAP@1000=0.3026, nDCG@10=0.5304, recall@100=0.4660
+- MAP@100 improved over exp23 (0.2596 vs 0.2552), confirming the recall ceiling hypothesis
+- recall@100 improved from 0.4527 to 0.4660 (reranker promoted relevant docs from ranks 100-1000)
+- MAP@1000=0.3026, first meaningful deep MAP measurement
+- nDCG@10 slightly better (0.5304 vs 0.5292)
+- VRAM usage: 2.6 GB (same as exp23)
+- New best MAP@100 at the time

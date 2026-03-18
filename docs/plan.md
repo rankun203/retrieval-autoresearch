@@ -53,7 +53,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - [ ] Fix Qwen3-Embedding-0.6B (EOS/pooling issue) — zero-shot then fine-tuned
 - [x] exp25: `intfloat/e5-large-v2` batch=32 doc_len=220 → dense MAP@100=0.1605 (worse than e5-base 0.1772), +rerank MAP@100=0.2219 (matches e5-base+rerank). Discarded — batch=32 hurts contrastive learning vs batch=64 on e5-base
 - [ ] exp26: e5-large-v2 with doc_len=512 for encoding only (train at 220, encode at 512 — NOTE: train/encode length mismatch, model sees longer docs at retrieval than training)
-- [ ] `BAAI/bge-base-en-v1.5` as alternative to e5
+- [x] exp38: `BAAI/bge-base-en-v1.5` + 3-phase HN mining + RRF → MAP@100=0.3348 (below e5-base 0.3483). Dense=0.2925 vs 0.3152. OVERFIT/PLATEAU. e5-base-v2 remains better.
 
 ## Priority 3: Training improvements
 

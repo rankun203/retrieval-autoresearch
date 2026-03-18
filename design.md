@@ -1,40 +1,39 @@
-# exp24-qwen3-reranker-top1k: BM25+Bo1 with Qwen3-Reranker-0.6B (top-1000)
+# exp27-hybrid-fusion: Dense + BM25 RRF Fusion with Qwen3-Reranker
 
 ## Goal
-Test whether reranking a larger candidate pool (top-1000 vs top-100) with Qwen3-Reranker-0.6B improves MAP by surfacing relevant documents ranked beyond position 100 in the BM25+Bo1 first stage.
+Combine dense retrieval (e5-base-v2) and sparse retrieval (BM25+Bo1) via Reciprocal Rank Fusion (RRF), then rerank the fused top-100 with Qwen3-Reranker-0.6B to exploit complementary retrieval signals.
 
 ## Hypothesis
-BM25+Bo1 retrieves relevant documents beyond rank 100 that the reranker could promote into the top-100. By expanding the reranking pool from 100 to 1000, we increase the recall ceiling available to the reranker, which should improve MAP@100 (and enable meaningful MAP@1000 measurement).
+Dense and sparse retrievers find different relevant documents: BM25 excels at exact term matching while dense models capture semantic similarity. Fusing their ranked lists via RRF should increase recall beyond either system alone. Applying the Qwen3 reranker on the higher-recall fused pool should yield better MAP@100 than reranking either system's output alone.
 
 ## Method
-- Same pipeline as exp23 but with RERANK_TOP_K=1000 instead of 100
-- Load precomputed BM25+Bo1 TREC run file from exp22
-- Keep top-1000 candidates per query
-- Rerank all 1000 using Qwen3-Reranker-0.6B with P(yes) scoring
-- Evaluate MAP@100, MAP@1000, nDCG@10, recall@100
+1. **Train e5-base-v2** bi-encoder on MS-MARCO (600s, InfoNCE with symmetric in-batch negatives)
+2. **Dense retrieval**: Encode 528K Robust04 docs, build FAISS GPU index, retrieve top-1000 per query
+3. **Load BM25+Bo1** precomputed run file (top-1000 per query from exp22)
+4. **RRF fusion**: Merge dense and BM25 ranked lists with Reciprocal Rank Fusion (k=60)
+5. **Rerank top-100** from the fused list using Qwen3-Reranker-0.6B with P(yes) scoring
+6. Evaluate all stages: dense-only, fused, and fused+reranked
 
 ## Key parameters
-- Reranker: Qwen/Qwen3-Reranker-0.6B (float16)
-- RERANK_TOP_K: 1000 (up from 100 in exp23)
-- Batch size: 4
-- MAX_CONTENT_TOKENS: 512
-- ~249K query-doc pairs to rerank (249 queries x ~1000 docs)
+- Dense encoder: intfloat/e5-base-v2, batch=64, LR=1e-5, temp=0.05
+- MAX_QUERY_LEN: 96, MAX_DOC_LEN: 220
+- RRF k=60 (standard fusion parameter)
+- Reranker: Qwen/Qwen3-Reranker-0.6B, RERANK_TOP_K=100
+- RERANK_BATCH: 4, MAX_CONTENT_TOKENS: 512
 
 ## Expected outcome
-- MAP@100 improvement over exp23 (0.2552) due to higher recall ceiling
-- First meaningful MAP@1000 measurement
-- nDCG@10 similar to exp23 (top-10 ranking mostly from top-100 candidates)
-- Longer runtime (~10x more documents to rerank)
+- Fused recall@100 should exceed both dense and BM25 individually
+- Fused+reranked MAP@100 should exceed exp24 (0.2596, BM25-only + reranker)
+- Dense-only MAP@100 should match exp15 (~0.177)
 
 ## Baseline comparison
-- exp23 (rerank top-100): MAP@100=0.2552, nDCG@10=0.5292
-- BM25+Bo1 (exp22): MAP@100=0.2504, nDCG@10=0.4662
+- exp24 (BM25+Bo1 + Qwen3-Reranker top-1000): MAP@100=0.2596, nDCG@10=0.5304
+- exp15 (dense-only e5-base-v2): MAP@100=0.1772
+- BM25+Bo1 alone (exp22): MAP@100=0.2504
 
 ## Results
-- MAP@100=0.2596, MAP@1000=0.3026, nDCG@10=0.5304, recall@100=0.4660
-- MAP@100 improved over exp23 (0.2596 vs 0.2552), confirming the recall ceiling hypothesis
-- recall@100 improved from 0.4527 to 0.4660 (reranker promoted relevant docs from ranks 100-1000)
-- MAP@1000=0.3026, first meaningful deep MAP measurement
-- nDCG@10 slightly better (0.5304 vs 0.5292)
-- VRAM usage: 2.6 GB (same as exp23)
-- New best MAP@100 at the time
+- **Hybrid RRF + Qwen3-Reranker top-100**: MAP@100=0.2675, nDCG@10=0.5441, recall@100=0.4843
+- New best MAP@100 (0.2675) and nDCG@10 (0.5441) at the time
+- Fused recall@100 (0.4843) exceeded both BM25 (0.4527) and dense alone, confirming complementarity
+- Dense-only MAP@100=0.1801 (consistent with exp15)
+- The hybrid approach validated the fusion + rerank paradigm that became the standard pipeline for subsequent experiments

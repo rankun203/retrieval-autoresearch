@@ -113,7 +113,7 @@ Between agent launches, check:
 
 ## Timeout Limits
 - Design agent: 10 minutes
-- Runner agent: up to 3 hours (varies by method)
+- Runner agent: up to 5 hours (varies by method)
 - Review agent: 10 minutes
 - Cleanup agent: 5 minutes
 

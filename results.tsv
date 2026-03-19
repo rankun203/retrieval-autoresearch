@@ -14,3 +14,8 @@ f2fadf5	0.524956	0.252430	0.252430	0.452732	20.3	336.0	discard	Qwen3-Reranker-0.
 f2fadf5	0.524177	0.295677	0.252484	0.456429	20.3	3197.8	discard	Qwen3-Reranker-0.6B	64	512	N/A	BM25+Bo1 >> Qwen3 reranker ml512 top-1000	exp03b-qwen3-rerank-fix
 f2fadf5	0.532594	0.259670	0.259670	0.452732	20.3	504.3	discard	Qwen3-Reranker-0.6B	64	768	N/A	BM25+Bo1 >> Qwen3 reranker ml768 top-100	exp03b-qwen3-rerank-fix
 f2fadf5	0.528786	0.312002	0.266773	0.477631	20.3	4832.9	keep	Qwen3-Reranker-0.6B	64	768	N/A	BM25+Bo1 >> Qwen3 reranker ml768 top-1000 (new best)	exp03b-qwen3-rerank-fix
+48a6b4e	0.532594	-1	0.259670	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker default instruction top-100	exp04-qwen3-instructions
+48a6b4e	0.539970	-1	0.263918	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker general-short instruction top-100	exp04-qwen3-instructions
+48a6b4e	0.534460	-1	0.261780	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker general-long instruction top-100	exp04-qwen3-instructions
+48a6b4e	0.542921	-1	0.266744	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker news-short instruction top-100 (best)	exp04-qwen3-instructions
+48a6b4e	0.536429	-1	0.263883	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker news-long instruction top-100	exp04-qwen3-instructions

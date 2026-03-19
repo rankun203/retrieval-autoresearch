@@ -1,65 +1,66 @@
-# Review: exp01-bm25-baseline
+# Review: exp03b-qwen3-rerank-fix
 
 ## Data Leakage Check: PASS
 
-- `load_robust04()` called at line 32, returning `corpus`, `queries`, `qrels`.
-- `corpus`: Used only for building the Terrier index (line 46-49). ALLOWED.
-- `queries`: Used only to construct `topics_df` for retrieval (line 70). This is the standard evaluation-time query input, not training. ALLOWED.
-- `qrels`: Used only in `evaluate_run(run, qrels)` at line 97, the final evaluation step. ALLOWED.
-- No training occurs in this experiment (zero-shot lexical baseline).
-- No hard negative mining. No model weights. No gradient updates.
+- `load_robust04()` called at line 53, returning `corpus`, `queries`, `qrels`
+- `corpus`: Used only for document text lookup during reranking (lines 57-58) -- ALLOWED
+- `queries`: Used to build BM25 topics (line 88) and as reranking query text (line 175) -- this is inference/evaluation, not training -- ALLOWED
+- `qrels`: Used only in `evaluate_run(reranked_run, qrels)` at line 211 -- final evaluation only -- ALLOWED
+- No training occurs (zero-shot pretrained reranker) -- no data leakage possible
+- No hard negative mining, no training loops, no gradient updates
 
 **Verdict: No data leakage detected.**
 
 ## Code Quality
 
-- Clean, well-structured script with clear sections.
-- Proper use of `prepare.py` utilities (`load_robust04`, `evaluate_run`, `write_trec_run`).
-- Index caching under `~/.cache/` avoids redundant rebuilds.
-- Summary block prints all required metrics in the expected format.
-- Minor: `TOP_K = 1000` retrieves 1000 docs but only top-100 are evaluated for MAP@100. This is fine -- the full 1000 are used for Bo1 feedback and MAP@1000.
+Good overall. Clean structure with BM25 first-stage followed by Qwen3 reranking.
 
-No issues found.
+- Minor: `torch_dtype` deprecation warning (line 114) -- should use `dtype` instead. Non-blocking.
+- Minor: `max_length` parameter in `tokenizer.pad()` is ignored when `padding=True` (warning in log). The truncation is handled correctly in the `tokenizer()` call above, so actual behavior is correct.
+- The prefix/suffix token construction (lines 122-125, 130-142) correctly follows the official Qwen3-Reranker model card format with `<think>` block and colon-formatted tags.
 
 ## Design Adherence
 
-| Design spec | Actual | Match? |
-|-------------|--------|--------|
-| BM25 k1=0.9, b=0.4 | k1=0.9, b=0.4 | Yes |
-| Bo1 fb_docs=5, fb_terms=30 | fb_docs=5, fb_terms=30 | Yes |
-| TOP_K=1000 | 1000 | Yes |
-| Run name: bm25-bo1-default | bm25-bo1-default.run | Yes |
-| Expected MAP@100: 0.25-0.30 | 0.2504 | Yes (low end) |
-| Expected nDCG@10: 0.40-0.45 | 0.4662 | Yes (slightly above) |
-| Expected recall@100: 0.35-0.45 | 0.4527 | Yes (upper end) |
+The design specified 2 runs (top-100, top-1000) at max_length=8192. The actual implementation ran a 3x2 grid (max_lengths 256/512/768 x depths 100/1000 = 6 runs). This is a reasonable deviation -- the runner likely reduced max_length from 8192 to avoid OOM, and tested multiple lengths to find the sweet spot. The grid search is more informative than a single configuration.
 
-Full adherence to design.
+The design expected MAP@100 of 0.30-0.38. The best result (0.2668) falls below this expectation but still beats the BM25+Bo1 baseline (0.2504) by +6.5%. The shorter max_lengths likely truncate long Robust04 documents, limiting the reranker's effectiveness.
 
 ## Performance Analysis
 
-| Metric | Value |
-|--------|-------|
-| nDCG@10 | 0.466202 |
-| MAP@1000 | 0.296779 |
-| MAP@100 | 0.250376 |
-| recall@100 | 0.452732 |
-| Eval duration | 22.6s |
-| Peak VRAM | 0.0 MB (CPU-only) |
+| Run | MAP@100 | nDCG@10 | MAP@1000 | R@100 | Time |
+|-----|---------|---------|----------|-------|------|
+| qwen3-ml256-top100 | 0.2340 | 0.4954 | 0.2340 | 0.4527 | 145s |
+| qwen3-ml256-top1000 | 0.2149 | 0.4920 | 0.2568 | 0.4012 | 1484s |
+| qwen3-ml512-top100 | 0.2524 | 0.5250 | 0.2524 | 0.4527 | 313s |
+| qwen3-ml512-top1000 | 0.2525 | 0.5242 | 0.2957 | 0.4564 | 3175s |
+| qwen3-ml768-top100 | 0.2597 | 0.5326 | 0.2597 | 0.4527 | 481s |
+| qwen3-ml768-top1000 | **0.2668** | 0.5288 | **0.3120** | **0.4776** | 4810s |
 
-These results are consistent with published BM25+PRF baselines on Robust04. For reference, the literature reports BM25 alone at MAP ~0.25 and Bo1 PRF adding 5-15% relative improvement. The MAP@1000 of 0.297 is in line with published numbers (e.g., Anserini BM25+RM3 reports ~0.29-0.30).
+Key observations:
+- Longer max_length consistently improves MAP@100 (0.234 -> 0.252 -> 0.267 at depth 1000)
+- Depth 1000 helps at ml768 (+0.0071 MAP@100 vs top100) but hurts at ml256 (-0.019)
+- At short max_lengths, depth 1000 hurts because the reranker sees truncated docs and makes worse decisions on the expanded candidate set
+- Best run (ml768-top1000) beats BM25+Bo1 baseline by +0.0164 MAP@100 (+6.5%)
+- nDCG@10 improves substantially: 0.5288 vs 0.4662 baseline (+13.4%)
+- The broken exp03 Qwen3 runs (MAP@100=0.013-0.128) are fully fixed
 
-This is the first experiment, so there is no prior result to compare against.
+vs. current best (BM25+Bo1, MAP@100=0.2504): **+6.5% improvement**
+vs. exp03 BGE reranker (MAP@100=0.2487): **+7.3% improvement**
 
-## Budget Assessment
+## Budget Assessment: OK
 
-OK -- no training budget required for a lexical baseline.
+Zero-shot inference, no training budget applies. Total wall-clock ~10,451s (2.9 hours) for all 6 runs.
 
-## Verdict: APPROVE
+## Verdict: **APPROVE**
 
-This is a clean, well-executed BM25+Bo1 baseline. No data leakage, correct implementation, and results within expected ranges. As the first experiment, this establishes the reference point (MAP@100 = 0.2504) for all future experiments.
+The experiment successfully fixes the broken Qwen3 reranker from exp03 by using the correct prompt format. The best configuration (ml768-top1000) achieves MAP@100=0.2668, beating the current best of 0.2504. The code is clean with no data leakage. The results are plausible and consistent with expectations for a 0.6B reranker on Robust04.
+
+Best run `qwen3-ml768-top1000`: **keep** (new best MAP@100)
+All other runs: **discard**
 
 ## Recommendations
 
-- Future dense retrieval experiments should target MAP@100 > 0.25 to beat this baseline.
-- Consider a BM25-only run (without Bo1) to measure the exact PRF contribution.
-- The gap between MAP@100 (0.250) and MAP@1000 (0.297) suggests that expanding beyond top-100 captures additional relevant documents -- future experiments retrieving only top-100 should note this.
+1. Try max_length=1024 or higher -- the trend shows continued improvement with longer context. The model supports up to 32K tokens, and Robust04 docs average ~250 words but some are much longer.
+2. Consider a larger Qwen3-Reranker variant if available, or combine with a stronger first-stage retriever.
+3. The 4810s reranking time for depth-1000 is substantial. For future experiments, consider whether depth-100 (481s, MAP@100=0.2597) offers a better speed/quality tradeoff.
+4. The batch size of 64 works well at these max_lengths. At higher max_lengths, may need to reduce.

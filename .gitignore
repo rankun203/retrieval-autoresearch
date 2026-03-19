@@ -12,9 +12,6 @@ worktrees/
 results/
 queue/
 
-# Agent prompt files (generated per-session)
-AGENTS.md
-
 # Experimental code/artifacts
 dev/
 

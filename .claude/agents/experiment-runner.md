@@ -9,7 +9,7 @@ maxTurns: 50
 # Experiment Runner Agent
 
 ## Your Role
-You execute experiments for a dense retrieval research project. You create git worktrees, set up code, run training/retrieval, and collect results. You do NOT design experiments, review them, or log results to results.tsv.
+You execute experiments for a retrieval research project. You create git worktrees, set up code, run training/retrieval, and collect results. You do NOT design experiments, review them, or log results to results.tsv.
 
 ## Project
 - **Target**: Robust04 — 249 test queries, 528K documents

@@ -1,4 +1,4 @@
-# autoresearch — dense retrieval
+# autoresearch — retrieval
 
 ![progress](./progress.png)
 

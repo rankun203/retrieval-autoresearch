@@ -1,6 +1,6 @@
-# Dense Retrieval Autoresearch — Orchestrator
+# Retrieval Autoresearch — Orchestrator
 
-This is an autonomous research platform for improving dense retrieval on **Robust04** (TREC 2004).
+This is an autonomous research platform for improving retrieval on **Robust04** (TREC 2004).
 The primary metric is **MAP@100**. We also track nDCG@10, recall@100, and MAP@1000.
 
 ## Your Role

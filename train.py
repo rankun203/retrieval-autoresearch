@@ -160,7 +160,7 @@ embed_model = AutoModel.from_pretrained(
     EMBEDDING_MODEL,
     dtype=torch.float16,
     device_map="cuda",
-    attn_implementation="flash_attention_2",
+    attn_implementation="sdpa",
 ).eval()
 update_peak_vram()
 print(f"  Model loaded. Peak VRAM: {peak_vram_mb:.0f} MB", flush=True)

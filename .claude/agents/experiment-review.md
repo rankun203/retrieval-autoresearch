@@ -117,7 +117,7 @@ commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	bat
 
 ## Status Determination
 
-- **keep**: MAP@100 exceeds current best in results.tsv (or is the first entry), or achieves similar MAP@100 to previous best but with significantly shorter evaluation duration
+- **keep**: MAP@100 exceeds current best in results.tsv (or is the first entry), or achieves similar MAP@100 to current best but with significantly shorter evaluation duration
 - **discard**: Experiment completed but MAP@100 does not exceed current best
 - **crash**: Experiment failed to produce metrics
 

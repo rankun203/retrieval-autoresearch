@@ -39,6 +39,11 @@ cp worktrees/{name}/runs/*.run runs/{name}/runs/ 2>/dev/null || echo "No run fil
 # Copy design and review docs for reference
 cp worktrees/{name}/design.md runs/{name}/ 2>/dev/null || true
 cp worktrees/{name}/review.md runs/{name}/ 2>/dev/null || true
+
+# Copy design and review docs to tracked docs/experiments/ directory
+mkdir -p docs/experiments/{name}
+cp worktrees/{name}/design.md docs/experiments/{name}/ 2>/dev/null || true
+cp worktrees/{name}/review.md docs/experiments/{name}/ 2>/dev/null || true
 ```
 
 ### 2. Cherry-pick (if status=keep)
@@ -72,7 +77,7 @@ If this fails (e.g., not enough data points yet), skip it.
 
 ```bash
 cd /home/ubuntu/projects/retrieval-autoresearch
-git add results.tsv docs/plan.md progress.svg 2>/dev/null
+git add results.tsv docs/plan.md docs/experiments/ progress.svg 2>/dev/null
 git commit -m "Close {name}: {one-line summary of outcome}"
 ```
 
@@ -97,6 +102,7 @@ Check that cleanup is complete:
 - `runs/{name}/logs/` contains archived log files
 - `runs/{name}/runs/` contains archived .run files
 - `runs/{name}/design.md` and `runs/{name}/review.md` preserved
+- `docs/experiments/{name}/design.md` and `review.md` committed (git-tracked)
 - `docs/plan.md` reflects the experiment outcome
 - `results.tsv` has row(s) for this experiment (added by review agent)
 

@@ -126,14 +126,15 @@ A 0.001 improvement that adds 50 lines of complex code is not worth it. A simpli
 ## DATA LEAKAGE RULES (CRITICAL)
 
 **FORBIDDEN** — will cause the review agent to REJECT:
-- Using Robust04 test queries during training (e.g., encoding test queries to mine hard negatives)
-- Using Robust04 qrels during training (e.g., labeling docs as positive/negative using qrels)
-- Any flow of test-time information into model weights
+- Using Robust04 test queries during training in any way (encoding, mining, scoring, etc.)
+- Using Robust04 qrels during training (labeling, filtering, selecting, etc.)
+- Any flow of test-time information (queries or qrels) into model weights or training pipeline
 
 **ALLOWED**:
 - `load_robust04()` to get the corpus for encoding/indexing (corpus text is not test data)
 - `evaluate_run(run, qrels)` as the FINAL step after all training/retrieval is done
-- `stream_msmarco_triples()` for all training data
+- `stream_msmarco_triples()` for all training data — use MS-MARCO queries for any training-time retrieval
+- Retrieving from the Robust04 corpus using non-Robust04 queries (e.g., MS-MARCO queries)
 - Using a separate, documented train/validation split if needed
 
 ## When Done

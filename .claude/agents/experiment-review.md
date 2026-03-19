@@ -60,7 +60,7 @@ Read `worktrees/{name}/train.py` line by line. This is the most critical part of
 
 ### FORBIDDEN patterns (automatic REJECT):
 
-1. **Using qrels during training**: Loading `qrels` from `load_robust04()` and using them to select positive/negative documents for training batches
+1. **Using qrels during training**: Loading `qrels` from `load_robust04()` and using them for anything before final evaluation — selecting positives/negatives, filtering, labeling, scoring
    ```python
    # FORBIDDEN — qrels used to label training data
    relevant = set(qrels.get(qid, {}).keys())
@@ -68,11 +68,11 @@ Read `worktrees/{name}/train.py` line by line. This is the most critical part of
        positives.append(did)
    ```
 
-2. **Using test queries during training**: Encoding Robust04 test queries to mine hard negatives or create training triples
+2. **Using Robust04 queries during training**: Any use of Robust04 test queries before final evaluation — encoding them, retrieving with them, mining with them, scoring with them. This includes using them as input to any retrieval, mining, or judging step during training.
    ```python
-   # FORBIDDEN — test queries used for mining
-   query_texts = [queries_dict[qid] for qid in query_ids]  # these are test queries!
-   q_embs = model.encode(query_texts)  # used to find hard negatives
+   # FORBIDDEN — test queries used for mining/training
+   query_texts = [queries_dict[qid] for qid in query_ids]  # these are Robust04 test queries!
+   q_embs = model.encode(query_texts)  # used to find hard negatives — LEAKAGE
    ```
 
 3. **Any call to `load_robust04()` where returned `qrels` or `queries` are used BEFORE the final evaluation section**
@@ -82,14 +82,17 @@ Read `worktrees/{name}/train.py` line by line. This is the most critical part of
 1. `load_robust04()` to get `corpus` for encoding/indexing — corpus text is not test data
 2. `evaluate_run(run, qrels)` as the FINAL step for computing metrics
 3. `stream_msmarco_triples()` for all training data
-4. Using a separate, documented train/validation query split (must be explicit in design.md)
+4. Retrieving from the Robust04 corpus using MS-MARCO queries (not Robust04 queries) — the corpus is fair game, the queries/qrels are not
+5. LLM-as-judge scoring of retrieved docs, as long as the queries driving retrieval are NOT from Robust04
+6. Using a separate, documented train/validation query split (must be explicit in design.md)
 
 ### How to verify:
-1. `grep -n "qrels" worktrees/{name}/train.py` — trace every reference
-2. `grep -n "queries" worktrees/{name}/train.py` — is `queries` from `load_robust04()` used only for final retrieval?
-3. `grep -n "load_robust04" worktrees/{name}/train.py` — what variables receive the return values?
-4. If hard negative mining exists: what queries drive the mining? Must be MS-MARCO or a documented train split.
-5. Check the data flow: does any test-time information (queries, relevance labels) flow into model weights?
+1. `grep -n "qrels" worktrees/{name}/train.py` — trace every reference. Must only appear in final evaluation.
+2. `grep -n "queries" worktrees/{name}/train.py` — `queries` from `load_robust04()` must only be used for final retrieval/evaluation, never for training-time retrieval or mining.
+3. `grep -n "load_robust04" worktrees/{name}/train.py` — what variables receive the return values? Trace their usage.
+4. If any retrieval step happens during training: what queries drive it? Must be MS-MARCO or external — never Robust04 queries.
+5. If LLM judging happens: what queries were used to retrieve the docs being judged? Must not be Robust04 queries.
+6. Check the data flow: does any test-time information (queries, relevance labels) flow into model weights or training data selection?
 
 ## results.tsv Format
 

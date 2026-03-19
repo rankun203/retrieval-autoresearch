@@ -97,9 +97,10 @@ runs/{name}/         # Archived by cleanup agent (gitignored)
 
 All experiments MUST follow these rules. The review agent enforces them:
 
-- **FORBIDDEN**: Using Robust04 test queries or qrels during training
-- **FORBIDDEN**: Hard negative mining with test queries
-- **ALLOWED**: Loading corpus for encoding/indexing
+- **FORBIDDEN**: Using Robust04 test queries or qrels during training in any way
+- **FORBIDDEN**: Any training-time retrieval or mining using Robust04 queries
+- **ALLOWED**: Loading corpus for encoding/indexing (corpus is not test data)
+- **ALLOWED**: Retrieving from Robust04 corpus using MS-MARCO queries for training
 - **ALLOWED**: `evaluate_run(run, qrels)` as the final evaluation step
 - **ALLOWED**: `stream_msmarco_triples()` for training data
 

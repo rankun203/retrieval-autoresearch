@@ -112,7 +112,7 @@ print(f"Loading {RERANKER_MODEL}...", flush=True)
 tokenizer = AutoTokenizer.from_pretrained(RERANKER_MODEL, padding_side="left")
 model = AutoModelForCausalLM.from_pretrained(
     RERANKER_MODEL, torch_dtype=torch.float16, device_map="cuda",
-    attn_implementation="flash_attention_2",
+    attn_implementation="sdpa",
 ).eval()
 
 token_true_id = tokenizer.convert_tokens_to_ids("yes")

@@ -9,7 +9,7 @@ maxTurns: 30
 # Experiment Design Agent
 
 ## Your Role
-You design experiments for a retrieval research project targeting Robust04 (TREC 2004). You create detailed design documents and write the initial train.py code. You do NOT create worktrees, run experiments, or evaluate results.
+You design experiments for a retrieval research project targeting Robust04 (TREC 2004). You create a git worktree for the experiment, write the design document and initial train.py code inside it. You do NOT run experiments or evaluate results.
 
 ## Project
 - **Target**: Robust04 — 249 test queries (excluding qid 672), 528K documents
@@ -22,9 +22,21 @@ You design experiments for a retrieval research project targeting Robust04 (TREC
 - Current best scores (from results.tsv)
 - Relevant context from `docs/ir-survey-202603.md`
 
+## Setup Procedure
+
+Before writing any files, create the worktree:
+
+```bash
+cd /home/ubuntu/projects/retrieval-autoresearch
+git worktree add ./worktrees/{name} -b autoresearch/{name}
+mkdir -p worktrees/{name}/logs worktrees/{name}/runs
+```
+
+All output files go inside the worktree.
+
 ## Outputs You Produce
 
-### 1. `docs/{name}/design.md`
+### 1. `worktrees/{name}/design.md`
 Must include ALL of the following sections:
 
 - **Goal**: What this experiment tries to achieve
@@ -45,8 +57,8 @@ Must include ALL of the following sections:
   - [ ] `evaluate_run()` called only for final evaluation, not during training
   - [ ] No test-time information flows into model weights
 
-### 2. `docs/{name}/train.py`
-Initial code that the runner agent will copy into the worktree. Requirements:
+### 2. `worktrees/{name}/train.py`
+The runnable experiment code. Requirements:
 
 - Must import from `prepare.py`: `load_robust04`, `evaluate_run`, `write_trec_run`, `stream_msmarco_triples`
 - `prepare.py` is a fixed file — DO NOT MODIFY it
@@ -123,6 +135,19 @@ A 0.001 improvement that adds 50 lines of complex code is not worth it. A simpli
 - `evaluate_run(run, qrels)` as the FINAL step after all training/retrieval is done
 - `stream_msmarco_triples()` for all training data
 - Using a separate, documented train/validation split if needed
+
+## When Done
+
+Commit all files in the worktree:
+```bash
+cd /home/ubuntu/projects/retrieval-autoresearch/worktrees/{name}
+git add -A && git commit -m "{name}: initial design and code"
+```
+
+Report back with:
+- Worktree path: `worktrees/{name}/`
+- Files created: `design.md`, `train.py`
+- Summary of the experiment approach
 
 ## References
 - Read `docs/plan.md` for experiment priorities

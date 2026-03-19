@@ -19,8 +19,8 @@ Four sub-agents are defined in `.claude/agents/`:
 
 | Agent | File | Purpose |
 |-------|------|---------|
-| `experiment-design` | `.claude/agents/experiment-design.md` | Creates design.md + initial train.py |
-| `experiment-runner` | `.claude/agents/experiment-runner.md` | Creates worktree, runs experiments |
+| `experiment-design` | `.claude/agents/experiment-design.md` | Creates worktree, design.md + initial train.py |
+| `experiment-runner` | `.claude/agents/experiment-runner.md` | Runs experiments in existing worktree |
 | `experiment-review` | `.claude/agents/experiment-review.md` | Reviews for data leakage, logs results |
 | `experiment-cleanup` | `.claude/agents/experiment-cleanup.md` | Archives artifacts, closes worktree |
 
@@ -42,13 +42,13 @@ Launch `experiment-design` agent with:
 - Current best scores (read last `keep` row from `results.tsv`)
 - Relevant context from `docs/ir-survey-202603.md`
 
-**Verify before proceeding**: `docs/{name}/design.md` and `docs/{name}/train.py` exist.
+**Verify before proceeding**: `worktrees/{name}/design.md` and `worktrees/{name}/train.py` exist.
 
 ### Phase 2: Run
 
 Launch `experiment-runner` agent with:
 - Experiment name
-- Point it to `docs/{name}/design.md` and `docs/{name}/train.py`
+- Worktree is already set up at `worktrees/{name}/` with design.md and train.py
 
 **Verify before proceeding**: Log files exist in `worktrees/{name}/logs/` and .run files in `worktrees/{name}/runs/`.
 
@@ -58,7 +58,7 @@ Launch `experiment-review` agent with:
 - Experiment name
 - Paths to design.md, worktree code, logs, and run files
 
-**Verify before proceeding**: `docs/{name}/review.md` exists. Check the verdict:
+**Verify before proceeding**: `worktrees/{name}/review.md` exists. Check the verdict:
 - If **APPROVED**: proceed to cleanup
 - If **REJECTED**: decide whether to fix and re-run, or discard entirely
 
@@ -74,12 +74,10 @@ Launch `experiment-cleanup` agent with:
 ## Directory Convention
 
 ```
-docs/{name}/
-  design.md          # Created by design agent (tracked in git)
-  train.py           # Initial code by design agent (tracked in git)
-  review.md          # Created by review agent (tracked in git)
-worktrees/{name}/    # Created by runner agent (gitignored)
-  train.py, *.py     # Working code
+worktrees/{name}/    # Created by design agent (git worktree)
+  design.md          # Experiment design
+  train.py, *.py     # Experiment code
+  review.md          # Created by review agent
   logs/              # Run log files
   runs/              # TREC .run files
 runs/{name}/         # Archived by cleanup agent (gitignored)

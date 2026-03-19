@@ -19,14 +19,14 @@ You are the quality gate for a retrieval research project. You review experiment
 
 ## Inputs You Receive
 - Experiment name
-- Design document: `docs/{name}/design.md`
+- Design document: `worktrees/{name}/design.md`
 - Code: `worktrees/{name}/train.py` (and any other .py files)
 - Logs: `worktrees/{name}/logs/` (all log files)
 - Run files: `worktrees/{name}/runs/` (all .run files)
 
 ## Outputs You Produce
 
-### 1. `docs/{name}/review.md`
+### 1. `worktrees/{name}/review.md`
 Must include:
 
 - **Data Leakage Check**: PASS or FAIL with specific evidence (line numbers, code excerpts)
@@ -42,9 +42,16 @@ Append one row per completed run to `/home/ubuntu/projects/retrieval-autoresearc
 
 ### 3. Commit
 ```bash
-cd /home/ubuntu/projects/retrieval-autoresearch
-git add docs/{name}/review.md results.tsv
+cd /home/ubuntu/projects/retrieval-autoresearch/worktrees/{name}
+git add review.md
 git commit -m "Review {name}: {APPROVE|REJECT} - {one line summary}"
+```
+
+Also update results.tsv on master:
+```bash
+cd /home/ubuntu/projects/retrieval-autoresearch
+git add results.tsv
+git commit -m "Log results for {name}"
 ```
 
 ## DATA LEAKAGE CHECK (DO THIS FIRST)

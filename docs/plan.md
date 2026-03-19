@@ -5,21 +5,23 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-**exp01-bm25-baseline** — MAP@100 = 0.2504, nDCG@10 = 0.4158, R@100 = 0.6002, MAP@1000 = 0.2816
-Method: BM25 (k1=1.2, b=0.75) + Bo1 PRF (fb_terms=10, fb_docs=3) via PyTerrier
+(none yet)
 
 ## Targets
 
-- [x] MAP@100 ≥ 0.20
+- [ ] MAP@100 ≥ 0.20
 - [ ] MAP@100 > 0.25
 - [ ] MAP@100 > 0.30
 - [ ] MAP@100 > 0.40
 - [ ] MAP@100 > 0.50
 - [ ] Finish exploring all methods in plan, find overall best
 
-## Baseline
+## Baselines
 
-- [x] BM25+PRF baseline via pyterrier — DONE (MAP@100=0.2504, see exp01-bm25-baseline)
+- [ ] BM25 baseline via pyterrier
+- [ ] BM25+PRF baseline via pyterrier
+- [ ] Dense retrieval baseline (try different embedding models)
+- [ ] Fusion baseline (RRF)
 
 ## Priority 1: Cross-encoder reranking
 
@@ -28,13 +30,17 @@ Method: BM25 (k1=1.2, b=0.75) + Bo1 PRF (fb_terms=10, fb_docs=3) via PyTerrier
 
 ## Priority 2: Better backbones
 
+- [ ] `Qwen/Qwen3-Embedding-0.6B` — 0.6B params, MTEB-en retrieval 61.83, 32K context, ~1.2GB
+- [ ] `Qwen/Qwen3-Embedding-8B` — 8B params, #1 MTEB multilingual (70.58), 32K context, ~16GB
+- [ ] `jinaai/jina-embeddings-v4` — 3.8B params, multimodal, MTEB-en 55.97, ~8GB
+- [ ] `nomic-ai/modernbert-embed-base` — small/fast, 8K context
 - [ ] `intfloat/e5-large-v2` with proper batch size
 - [ ] `BAAI/bge-base-en-v1.5` as alternative to e5
 - [ ] Utilize query variants to improve query performance (for evaluation, besides standard metrics, also look at good, medium and bad quality title queries and respective results)
 
 ## Priority 3: Training improvements
 
-- [ ] Hard negative mining (iterative, multi-phase) — NOTE: must use proper train/test split and evaluate before/after, no test query/qrel leakage
+- [ ] Hard negative mining (iterative, multi-phase) — use Qwen3.5-9B as relevance judge (never touch qrels for mining)
 - [ ] MarginMSE distillation from cross-encoder
 - [ ] Gradient accumulation + cosine LR scheduling
 - [ ] Two-stage curriculum: easy negatives → hard negatives
@@ -62,7 +68,10 @@ Method: BM25 (k1=1.2, b=0.75) + Bo1 PRF (fb_terms=10, fb_docs=3) via PyTerrier
 
 - e5-base-v2: batch=128, encode_batch=512, doc_len≤256 → ~20GB
 - e5-large-v2: batch=64, encode_batch=256, doc_len≤220 → ~30GB
-- Qwen3-0.6B: batch=64, encode_batch=256 → ~20GB
+- Qwen3-Embedding-0.6B: ~1.2GB fp16, encode_batch=256 → ~5GB
+- Qwen3-Embedding-8B: ~16GB fp16, encode_batch=64 → ~25GB
+- Jina-v4 (3.8B): ~8GB fp16, encode_batch=128 → ~15GB
+- Qwen3.5-9B (for HN mining judge): ~18GB fp16
 - Cross-encoder reranking: can keep bi-encoder in memory alongside reranker
 
 ## Notes

@@ -204,6 +204,62 @@ def stream_msmarco_triples() -> Iterator:
             yield query, positive, negative
 
 
+def stream_nq_pairs() -> Iterator:
+    """
+    Streams (query_text, positive_passage) pairs from Natural Questions.
+    Uses HuggingFace datasets streaming — no full download required.
+    Loops forever (re-shuffles on each epoch).
+    """
+    from datasets import load_dataset
+    while True:
+        ds = load_dataset(
+            "sentence-transformers/natural-questions",
+            split="train",
+            streaming=True,
+        )
+        for ex in ds:
+            query = ex.get("query", "")
+            answer = ex.get("answer", "")
+            if not query or not answer:
+                continue
+            yield query, answer
+
+
+def stream_hotpotqa_pairs() -> Iterator:
+    """
+    Streams (query_text, positive_passage) pairs from HotpotQA.
+    Uses HuggingFace datasets streaming — no full download required.
+    Concatenates supporting fact sentences as the positive passage.
+    Loops forever (re-shuffles on each epoch).
+    """
+    from datasets import load_dataset
+    while True:
+        ds = load_dataset(
+            "hotpotqa/hotpot_qa",
+            name="distractor",
+            split="train",
+            streaming=True,
+        )
+        for ex in ds:
+            query = ex.get("question", "")
+            # Build positive passage from supporting facts
+            sup_titles = ex.get("supporting_facts", {}).get("title", [])
+            context_titles = ex.get("context", {}).get("title", [])
+            context_sentences = ex.get("context", {}).get("sentences", [])
+            if not query or not sup_titles:
+                continue
+            # Collect sentences from supporting paragraphs
+            passages = []
+            for title in set(sup_titles):
+                if title in context_titles:
+                    idx = context_titles.index(title)
+                    passages.append(" ".join(context_sentences[idx]))
+            positive = " ".join(passages).strip()
+            if not positive:
+                continue
+            yield query, positive
+
+
 if __name__ == "__main__":
     print("=== Dense Retrieval Autoresearch Setup ===")
     download_robust04()

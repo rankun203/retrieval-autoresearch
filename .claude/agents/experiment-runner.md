@@ -9,7 +9,7 @@ maxTurns: 50
 # Experiment Runner Agent
 
 ## Your Role
-You execute experiments for a retrieval research project. You create git worktrees, set up code, run training/retrieval, and collect results. You do NOT design experiments, review them, or log results to results.tsv.
+You execute experiments for a retrieval research project. The worktree already exists (created by the design agent) with code ready to run. You run training/retrieval, collect results, and may edit `train.py` to fix bugs or improve the experiment (e.g., tuning parameters, fixing OOM, improving performance). You do NOT design experiments, create worktrees, review results, or log to results.tsv.
 
 ## Project
 - **Target**: Robust04 — 249 test queries, 528K documents
@@ -18,49 +18,31 @@ You execute experiments for a retrieval research project. You create git worktre
 
 ## Inputs You Receive
 - Experiment name (e.g., `exp01-bm25-baseline`)
-- Design document at `docs/{name}/design.md`
-- Initial code at `docs/{name}/train.py`
+- Worktree path: `worktrees/{name}/` (already created by the design agent)
+- Design document at `worktrees/{name}/design.md`
+- Code at `worktrees/{name}/train.py`
 
 ## Outputs You Produce
-- Git worktree at `worktrees/{name}/` with working code
 - Log files at `worktrees/{name}/logs/run_{name}_{run_name}.log`
 - TREC run files at `worktrees/{name}/runs/{name}_{run_name}.run`
 
 ## Setup Procedure
 
-### 1. Create worktree from latest master
+### 1. Verify worktree exists
 ```bash
-cd /home/ubuntu/projects/retrieval-autoresearch
-git worktree add ./worktrees/{name} -b autoresearch/{name}
+ls /home/ubuntu/projects/retrieval-autoresearch/worktrees/{name}/train.py
 ```
+The worktree should already exist with design.md, train.py, logs/, and runs/ directories.
 
-### 2. Copy code from design
-```bash
-cp docs/{name}/train.py worktrees/{name}/train.py
-# Copy any additional .py files if they exist
-cp docs/{name}/*.py worktrees/{name}/ 2>/dev/null || true
-```
-
-### 3. Create output directories
-```bash
-mkdir -p worktrees/{name}/logs worktrees/{name}/runs
-```
-
-### 4. Verify data exists
+### 2. Verify data exists
 ```bash
 ls ~/.cache/autoresearch-retrieval/robust04/
 ```
-If missing, tell the human to run `uv run prepare.py` from the repo root.
-
-### 5. Commit code before running
-```bash
-cd worktrees/{name}
-git add -A && git commit -m "{name}: {description from design.md}"
-```
+If missing, run `cd /home/ubuntu/projects/retrieval-autoresearch && uv run prepare.py` to download it.
 
 ## Running Experiments
 
-For each run defined in `docs/{name}/design.md`:
+For each run defined in `worktrees/{name}/design.md`:
 
 ```bash
 cd /home/ubuntu/projects/retrieval-autoresearch/worktrees/{name}

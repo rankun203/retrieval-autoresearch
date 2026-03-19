@@ -23,7 +23,7 @@ You archive experiment artifacts and close git worktrees. You do NOT evaluate re
 
 ### 1. Archive Artifacts
 
-Copy logs and run files from the worktree to the project root archive:
+Copy logs, run files, and key docs from the worktree to the project root archive:
 
 ```bash
 cd /home/ubuntu/projects/retrieval-autoresearch
@@ -36,6 +36,10 @@ cp worktrees/{name}/logs/* runs/{name}/logs/ 2>/dev/null || echo "No logs to cop
 
 # Copy TREC run files
 cp worktrees/{name}/runs/*.run runs/{name}/runs/ 2>/dev/null || echo "No run files to copy"
+
+# Copy design and review docs for reference
+cp worktrees/{name}/design.md runs/{name}/ 2>/dev/null || true
+cp worktrees/{name}/review.md runs/{name}/ 2>/dev/null || true
 ```
 
 ### 2. Cherry-pick (if status=keep)
@@ -93,6 +97,7 @@ Check that cleanup is complete:
 - `worktrees/{name}/` no longer exists
 - `runs/{name}/logs/` contains archived log files
 - `runs/{name}/runs/` contains archived .run files
+- `runs/{name}/design.md` and `runs/{name}/review.md` preserved
 - `docs/plan.md` reflects the experiment outcome
 - `results.tsv` has row(s) for this experiment (added by review agent)
 

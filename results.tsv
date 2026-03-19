@@ -8,3 +8,9 @@ d23f40c	0.505927	0.248673	0.248673	0.452732	23.2	344.5	discard	bge-reranker-v2-m
 d23f40c	0.504625	0.286437	0.243069	0.437638	23.2	3298.7	discard	bge-reranker-v2-m3	64	512	N/A	BM25+Bo1 >> BGE reranker rerank top-1000	exp03-cross-encoder-rerank
 d23f40c	0.225840	0.128492	0.128492	0.452732	23.2	314.9	discard	Qwen3-Reranker-0.6B	64	512	N/A	BM25+Bo1 >> Qwen3 reranker top-100 (BROKEN)	exp03-cross-encoder-rerank
 d23f40c	0.068552	0.050526	0.013797	0.106807	23.2	3176.8	discard	Qwen3-Reranker-0.6B	64	512	N/A	BM25+Bo1 >> Qwen3 reranker top-1000 (BROKEN)	exp03-cross-encoder-rerank
+f2fadf5	0.495416	0.233953	0.233953	0.452732	20.3	167.7	discard	Qwen3-Reranker-0.6B	64	256	N/A	BM25+Bo1 >> Qwen3 reranker ml256 top-100	exp03b-qwen3-rerank-fix
+f2fadf5	0.491974	0.256798	0.214890	0.401229	20.3	1507.1	discard	Qwen3-Reranker-0.6B	64	256	N/A	BM25+Bo1 >> Qwen3 reranker ml256 top-1000	exp03b-qwen3-rerank-fix
+f2fadf5	0.524956	0.252430	0.252430	0.452732	20.3	336.0	discard	Qwen3-Reranker-0.6B	64	512	N/A	BM25+Bo1 >> Qwen3 reranker ml512 top-100	exp03b-qwen3-rerank-fix
+f2fadf5	0.524177	0.295677	0.252484	0.456429	20.3	3197.8	discard	Qwen3-Reranker-0.6B	64	512	N/A	BM25+Bo1 >> Qwen3 reranker ml512 top-1000	exp03b-qwen3-rerank-fix
+f2fadf5	0.532594	0.259670	0.259670	0.452732	20.3	504.3	discard	Qwen3-Reranker-0.6B	64	768	N/A	BM25+Bo1 >> Qwen3 reranker ml768 top-100	exp03b-qwen3-rerank-fix
+f2fadf5	0.528786	0.312002	0.266773	0.477631	20.3	4832.9	keep	Qwen3-Reranker-0.6B	64	768	N/A	BM25+Bo1 >> Qwen3 reranker ml768 top-1000 (new best)	exp03b-qwen3-rerank-fix

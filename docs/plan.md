@@ -5,11 +5,11 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-(none yet)
+exp01-bm25-baseline: BM25+Bo1 PRF, MAP@100=0.2504
 
 ## Targets
 
-- [ ] MAP@100 ≥ 0.20
+- [x] MAP@100 ≥ 0.20
 - [ ] MAP@100 > 0.25
 - [ ] MAP@100 > 0.30
 - [ ] MAP@100 > 0.40
@@ -18,9 +18,9 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Baselines
 
-- [ ] BM25 baseline via pyterrier
-- [ ] BM25+PRF baseline via pyterrier
-- [ ] Dense retrieval baseline (try different embedding models)
+- [x] BM25 baseline via pyterrier
+- [x] BM25+PRF baseline via pyterrier
+- [ ] Dense retrieval baseline with e5-base-v2
 - [ ] Fusion baseline (RRF)
 
 ## Priority 1: Cross-encoder reranking

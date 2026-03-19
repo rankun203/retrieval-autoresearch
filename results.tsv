@@ -1,1 +1,2 @@
 commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	batch	doc_len	lr	description	worktree
+c24c2bb	0.466202	0.296779	0.250376	0.452732	0.0	22.567	keep	BM25+Bo1	N/A	N/A	N/A	BM25(k1=0.9,b=0.4)+Bo1 baseline on Robust04	exp01-bm25-baseline

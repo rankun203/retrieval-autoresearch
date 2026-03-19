@@ -16,25 +16,24 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - [ ] MAP@100 > 0.50
 - [ ] Finish exploring all methods in plan, find overall best
 
-## Basic methods
+## Baseline
 
 - [ ] BM25+PRF baseline via pyterrier
-- [ ] Utilize query variants to improve query performance (for evaluation, besides standard metrics, also look at good, medium and bad quality title queries and respective results)
 
 ## Priority 1: Cross-encoder reranking
 
-- [ ] Dense encoder + cross-encoder rerank (e.g. MiniLM-L-6-v2, Qwen3-Reranker-0.6B)
+- [ ] Dense encoder + cross-encoder rerank (e.g. MiniLM-L-6-v2, Qwen3-Reranker-0.6B with correct EOS/last-token pooling), zero-shot then fine-tuned
 - [ ] Rerank top-100 vs top-1000 comparison
 
 ## Priority 2: Better backbones
 
-- [ ] Fix Qwen3-Embedding-0.6B (EOS/last-token pooling) — zero-shot then fine-tuned
 - [ ] `intfloat/e5-large-v2` with proper batch size
 - [ ] `BAAI/bge-base-en-v1.5` as alternative to e5
+- [ ] Utilize query variants to improve query performance (for evaluation, besides standard metrics, also look at good, medium and bad quality title queries and respective results)
 
 ## Priority 3: Training improvements
 
-- [ ] Hard negative mining (iterative, multi-phase) — NOTE: must use proper train/test split, no test query/qrel leakage
+- [ ] Hard negative mining (iterative, multi-phase) — NOTE: must use proper train/test split and evaluate before/after, no test query/qrel leakage
 - [ ] MarginMSE distillation from cross-encoder
 - [ ] Gradient accumulation + cosine LR scheduling
 - [ ] Two-stage curriculum: easy negatives → hard negatives

@@ -23,3 +23,6 @@ logs/
 runs/
 run.log
 *.swp
+
+# JDK
+libs/libs/

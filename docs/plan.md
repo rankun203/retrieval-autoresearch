@@ -54,7 +54,7 @@ exp05-hybrid-rrf: BM25+Bo1 + Qwen3-Embedding-0.6B linear fusion + Qwen3-Reranker
 
 ## Priority 5: Advanced methods (from survey)
 
-- [ ] ColBERT late interaction
+- [x] ColBERT late interaction — DISCARD (exp06): all runs below current best; implementation bug: projection head not loaded correctly, token embeddings were not properly projected. Should be retried with correct ColBERT model loading (load full checkpoint including projection head).
 - [ ] Listwise reranking with LLM (RankGPT-style)
 - [ ] Document expansion: generate synthetic queries per document (docT5query-style)
 

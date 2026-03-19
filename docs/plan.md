@@ -25,7 +25,7 @@ exp01-bm25-baseline: BM25+Bo1 PRF, MAP@100=0.2504
 
 ## Priority 1: Cross-encoder reranking
 
-- [ ] Dense encoder + cross-encoder rerank (e.g. MiniLM-L-6-v2, Qwen3-Reranker-0.6B with correct EOS/last-token pooling), zero-shot then fine-tuned
+- [x] Dense encoder + cross-encoder rerank (e.g. MiniLM-L-6-v2, Qwen3-Reranker-0.6B with correct EOS/last-token pooling), zero-shot then fine-tuned — DISCARD: zero-shot cross-encoder reranking (MiniLM, BGE, Qwen3-Reranker) over BM25 top-1000 did not beat BM25+Bo1 baseline (MAP@100=0.2504); current best remains exp01-bm25-baseline
 - [ ] Rerank top-100 vs top-1000 comparison
 
 ## Priority 2: Better backbones

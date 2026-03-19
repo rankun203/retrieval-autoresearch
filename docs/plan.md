@@ -5,12 +5,12 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-exp01-bm25-baseline: BM25+Bo1 PRF, MAP@100=0.2504
+exp03b-qwen3-rerank-fix: Qwen3-Reranker-0.6B (ml768, top-1000), MAP@100=0.2668
 
 ## Targets
 
 - [x] MAP@100 ≥ 0.20
-- [ ] MAP@100 > 0.25
+- [x] MAP@100 > 0.25
 - [ ] MAP@100 > 0.30
 - [ ] MAP@100 > 0.40
 - [ ] MAP@100 > 0.50
@@ -25,8 +25,8 @@ exp01-bm25-baseline: BM25+Bo1 PRF, MAP@100=0.2504
 
 ## Priority 1: Cross-encoder reranking
 
-- [x] Dense encoder + cross-encoder rerank (e.g. MiniLM-L-6-v2, Qwen3-Reranker-0.6B with correct EOS/last-token pooling), zero-shot then fine-tuned — DISCARD: zero-shot cross-encoder reranking (MiniLM, BGE, Qwen3-Reranker) over BM25 top-1000 did not beat BM25+Bo1 baseline (MAP@100=0.2504); current best remains exp01-bm25-baseline
-- [ ] Rerank top-100 vs top-1000 comparison
+- [x] Dense encoder + cross-encoder rerank (e.g. MiniLM-L-6-v2, Qwen3-Reranker-0.6B with correct EOS/last-token pooling), zero-shot then fine-tuned — DISCARD (exp03): zero-shot MiniLM/BGE/Qwen3 (broken) did not beat baseline. KEEP (exp03b): Qwen3-Reranker-0.6B fixed with correct EOS/last-token pooling; ml768 top-1000 achieves MAP@100=0.2668 (new best), nDCG@10=0.5288, MAP@1000=0.3120; longer max_length and deeper reranking pool both help
+- [x] Rerank top-100 vs top-1000 comparison — top-1000 consistently beats top-100 across all max_length settings for Qwen3-Reranker
 
 ## Priority 2: Better backbones
 

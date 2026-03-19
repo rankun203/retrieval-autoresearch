@@ -1,6 +1,6 @@
 # autoresearch — retrieval
 
-![progress](./progress.png)
+![progress](./progress.svg)
 
 Autonomous retrieval research on Robust04 (TREC 2004). AI agents iterate on retrieval pipelines — BM25, dense bi-encoders, reranking, hybrid fusion — to maximize **MAP@100** on 249 test queries over a 528K document corpus.
 
@@ -54,8 +54,8 @@ train.py                — baseline BM25+Bo1 pipeline
 docs/plan.md            — prioritized experiment list
 docs/ir-survey-202603.md — IR paper survey for experiment ideas
 results.tsv             — experiment results log (tab-separated)
-progress.png            — auto-generated progress chart
-analysis.ipynb          — notebook to regenerate progress.png
+progress.svg            — auto-generated progress chart
+analysis.ipynb          — notebook to regenerate progress.svg
 scripts/install_java.sh — portable OpenJDK 21 installer
 runs/                   — archived run artifacts (gitignored)
 worktrees/              — experiment worktrees (gitignored)

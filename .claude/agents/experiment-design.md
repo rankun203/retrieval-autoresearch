@@ -94,16 +94,7 @@ The runnable experiment code. Requirements:
 - All print statements must use `flush=True`
 - Must save TREC run files via `write_trec_run()`
 - Entry point: `uv run train.py` (or `uv run --with <pkg> train.py` for extra deps)
-- If PyTerrier/Java is needed, train.py should configure Java at the top using the project script:
-  ```python
-  import subprocess, os
-  java_env = subprocess.run(["bash", "scripts/install_java.sh"], capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__)) + "/..")
-  for line in java_env.stdout.splitlines():
-      if line.strip().startswith("export "):
-          key, val = line.strip().replace("export ", "").split("=", 1)
-          os.environ[key] = val.strip('"')
-  ```
-  Or simpler: the runner agent sets JAVA_HOME and JVM_PATH env vars before running. Just ensure train.py doesn't hardcode Java paths.
+- Do NOT hardcode Java paths in train.py. The runner agent handles Java setup via `scripts/install_java.sh` and exports JAVA_HOME/JVM_PATH before running.
 
 ## prepare.py API (DO NOT MODIFY)
 

@@ -1,11 +1,7 @@
 """
 exp03b-qwen3-rerank-fix: Qwen3-Reranker-0.6B with CORRECT prompt format.
 
-Fixes exp03's broken Qwen3 implementation:
-- Adds <think> block in suffix
-- Adds colons in format tags (<Instruct>:, <Query>:, <Document>:)
-- Tokenizes content separately, prepends/appends prefix/suffix tokens
-- Uses max_length=8192 instead of 512
+Tests 3 max_lengths (256, 512, 768) × 2 depths (100, 1000) = 6 runs.
 
 Usage:
   uv run --with python-terrier --with transformers train.py
@@ -34,10 +30,12 @@ BO1_FB_DOCS = 5
 BO1_FB_TERMS = 30
 BM25_TOP_K = 1000
 RERANKER_MODEL = "Qwen/Qwen3-Reranker-0.6B"
-RERANK_DEPTHS = [100, 1000]
-BATCH_SIZE = 8
-MAX_LENGTH = 4096
 INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
+
+# 3 max_lengths × 2 depths = 6 runs
+MAX_LENGTHS = [256, 512, 768]
+RERANK_DEPTHS = [100, 1000]
+BATCH_SIZE = 64  # smaller max_length allows larger batch
 
 peak_vram_mb = 0.0
 t_start = time.time()
@@ -114,6 +112,7 @@ print(f"Loading {RERANKER_MODEL}...", flush=True)
 tokenizer = AutoTokenizer.from_pretrained(RERANKER_MODEL, padding_side="left")
 model = AutoModelForCausalLM.from_pretrained(
     RERANKER_MODEL, torch_dtype=torch.float16, device_map="cuda",
+    attn_implementation="flash_attention_2",
 ).eval()
 
 token_true_id = tokenizer.convert_tokens_to_ids("yes")
@@ -128,16 +127,16 @@ suffix_tokens = tokenizer.encode(suffix, add_special_tokens=False)
 def format_instruction(query_text, doc_text):
     return f"<Instruct>: {INSTRUCTION}\n<Query>: {query_text}\n<Document>: {doc_text}"
 
-def process_inputs(pairs):
+def process_inputs(pairs, max_length):
     """Tokenize with official prefix/suffix token prepend/append."""
     inputs = tokenizer(
         pairs, padding=False, truncation="longest_first",
         return_attention_mask=False,
-        max_length=MAX_LENGTH - len(prefix_tokens) - len(suffix_tokens),
+        max_length=max_length - len(prefix_tokens) - len(suffix_tokens),
     )
     for i, ele in enumerate(inputs["input_ids"]):
         inputs["input_ids"][i] = prefix_tokens + ele + suffix_tokens
-    inputs = tokenizer.pad(inputs, padding=True, return_tensors="pt", max_length=MAX_LENGTH)
+    inputs = tokenizer.pad(inputs, padding=True, return_tensors="pt", max_length=max_length)
     for key in inputs:
         inputs[key] = inputs[key].to("cuda")
     return inputs
@@ -154,71 +153,74 @@ def compute_scores(inputs):
     return scores
 
 # ---------------------------------------------------------------------------
-# Reranking runs
+# Reranking runs: 3 max_lengths × 2 depths = 6 runs
 # ---------------------------------------------------------------------------
 all_results = {}
 os.makedirs("runs", exist_ok=True)
 os.makedirs("logs", exist_ok=True)
 
-for depth in RERANK_DEPTHS:
-    run_name = f"qwen3-rerank-top{depth}"
-    print(f"\n{'='*60}", flush=True)
-    print(f"Run: {run_name}", flush=True)
-    print(f"  Rerank depth: {depth}", flush=True)
-    print(f"{'='*60}", flush=True)
+for max_len in MAX_LENGTHS:
+    for depth in RERANK_DEPTHS:
+        run_name = f"qwen3-ml{max_len}-top{depth}"
+        print(f"\n{'='*60}", flush=True)
+        print(f"Run: {run_name}", flush=True)
+        print(f"  Max length: {max_len}, Rerank depth: {depth}, Batch: {BATCH_SIZE}", flush=True)
+        print(f"{'='*60}", flush=True)
 
-    t_rerank_start = time.time()
-    reranked_run = {}
-    total_pairs = 0
+        t_rerank_start = time.time()
+        reranked_run = {}
+        total_pairs = 0
 
-    for i, (qid, candidates) in enumerate(bm25_run.items()):
-        query_text = queries[qid]
-        top_candidates = candidates[:depth]
-        doc_ids = [d[0] for d in top_candidates]
-        doc_texts = [get_doc_text(d) for d in doc_ids]
+        for i, (qid, candidates) in enumerate(bm25_run.items()):
+            query_text = queries[qid]
+            top_candidates = candidates[:depth]
+            doc_ids = [d[0] for d in top_candidates]
+            doc_texts = [get_doc_text(d) for d in doc_ids]
 
-        all_scores = []
-        for batch_start in range(0, len(doc_ids), BATCH_SIZE):
-            batch_end = min(batch_start + BATCH_SIZE, len(doc_ids))
-            batch_texts = doc_texts[batch_start:batch_end]
+            all_scores = []
+            for batch_start in range(0, len(doc_ids), BATCH_SIZE):
+                batch_end = min(batch_start + BATCH_SIZE, len(doc_ids))
+                batch_texts = doc_texts[batch_start:batch_end]
 
-            pairs = [format_instruction(query_text, dt) for dt in batch_texts]
-            inputs = process_inputs(pairs)
-            scores = compute_scores(inputs)
-            all_scores.extend(scores)
+                pairs = [format_instruction(query_text, dt) for dt in batch_texts]
+                inputs = process_inputs(pairs, max_len)
+                scores = compute_scores(inputs)
+                all_scores.extend(scores)
 
-            del inputs
-            torch.cuda.empty_cache()
+                del inputs
+                torch.cuda.empty_cache()
 
-        reranked_run[qid] = {}
-        for doc_id, score in zip(doc_ids, all_scores):
-            reranked_run[qid][doc_id] = score
+            reranked_run[qid] = {}
+            for doc_id, score in zip(doc_ids, all_scores):
+                reranked_run[qid][doc_id] = score
 
-        total_pairs += len(doc_ids)
-        if (i + 1) % 50 == 0 or (i + 1) == len(bm25_run):
-            print(f"    Reranked {i+1}/{len(bm25_run)} queries ({total_pairs:,} pairs scored)", flush=True)
+            total_pairs += len(doc_ids)
+            if (i + 1) % 50 == 0 or (i + 1) == len(bm25_run):
+                print(f"    Reranked {i+1}/{len(bm25_run)} queries ({total_pairs:,} pairs scored)", flush=True)
 
-    update_peak_vram()
-    t_rerank = time.time() - t_rerank_start
-    print(f"  Reranking done in {t_rerank:.1f}s", flush=True)
+        update_peak_vram()
+        t_rerank = time.time() - t_rerank_start
+        print(f"  Reranking done in {t_rerank:.1f}s", flush=True)
 
-    # Save run file
-    run_path = f"runs/{run_name}.run"
-    write_trec_run(reranked_run, run_path, run_name=run_name)
-    print(f"  TREC run written: {run_path}", flush=True)
+        # Save run file
+        run_path = f"runs/{run_name}.run"
+        write_trec_run(reranked_run, run_path, run_name=run_name)
+        print(f"  TREC run written: {run_path}", flush=True)
 
-    # Evaluate
-    metrics = evaluate_run(reranked_run, qrels)
-    eval_dur = t_bm25 + t_rerank  # full pipeline time
-    all_results[run_name] = {
-        "metrics": metrics,
-        "eval_dur": eval_dur,
-        "rerank_time": t_rerank,
-    }
-    print(f"  MAP@100:    {metrics['map@100']:.6f}", flush=True)
-    print(f"  nDCG@10:    {metrics['ndcg@10']:.6f}", flush=True)
-    print(f"  MAP@1000:   {metrics['map@1000']:.6f}", flush=True)
-    print(f"  Recall@100: {metrics['recall@100']:.6f}", flush=True)
+        # Evaluate
+        metrics = evaluate_run(reranked_run, qrels)
+        eval_dur = t_bm25 + t_rerank
+        all_results[run_name] = {
+            "metrics": metrics,
+            "eval_dur": eval_dur,
+            "rerank_time": t_rerank,
+            "max_length": max_len,
+            "depth": depth,
+        }
+        print(f"  MAP@100:    {metrics['map@100']:.6f}", flush=True)
+        print(f"  nDCG@10:    {metrics['ndcg@10']:.6f}", flush=True)
+        print(f"  MAP@1000:   {metrics['map@1000']:.6f}", flush=True)
+        print(f"  Recall@100: {metrics['recall@100']:.6f}", flush=True)
 
 # ---------------------------------------------------------------------------
 # Cleanup GPU
@@ -228,7 +230,19 @@ gc.collect()
 torch.cuda.empty_cache()
 
 # ---------------------------------------------------------------------------
-# Summary (best run)
+# Full results table
+# ---------------------------------------------------------------------------
+print(f"\n{'='*80}", flush=True)
+print("RESULTS SUMMARY", flush=True)
+print(f"{'='*80}", flush=True)
+print(f"{'Run':<30} {'MAP@100':>8} {'nDCG@10':>8} {'MAP@1000':>9} {'R@100':>8} {'Time':>8}", flush=True)
+print("-" * 80, flush=True)
+for name, r in all_results.items():
+    m = r["metrics"]
+    print(f"{name:<30} {m['map@100']:8.6f} {m['ndcg@10']:8.6f} {m['map@1000']:9.6f} {m['recall@100']:8.6f} {r['rerank_time']:7.1f}s", flush=True)
+
+# ---------------------------------------------------------------------------
+# Summary (best run by MAP@100)
 # ---------------------------------------------------------------------------
 best_name = max(all_results, key=lambda k: all_results[k]["metrics"]["map@100"])
 best = all_results[best_name]
@@ -252,4 +266,4 @@ print(f"num_docs_indexed: {len(corpus)}")
 print(f"eval_duration:    {best['eval_dur']:.3f}")
 print(f"loss_curve:       N/A (zero-shot)")
 print(f"budget_assessment: OK")
-print(f"method:           BM25+Bo1 >> {RERANKER_MODEL} rerank")
+print(f"method:           BM25+Bo1 >> {RERANKER_MODEL} rerank (ml={best['max_length']}, depth={best['depth']})")

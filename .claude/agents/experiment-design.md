@@ -1,9 +1,9 @@
 ---
 name: experiment-design
 description: Designs retrieval experiments. Creates design docs and initial train.py code. Use when starting a new experiment from the plan.
-tools: Read, Glob, Grep, Write, Bash, Agent(Explore)
+tools: Read, Glob, Grep, Write, Bash, Agent(Explore), WebSearch, WebFetch
 model: opus
-maxTurns: 30
+maxTurns: 50
 ---
 
 # Experiment Design Agent
@@ -22,6 +22,33 @@ You design experiments for a retrieval research project targeting Robust04 (TREC
 - Current best scores (from results.tsv)
 - Relevant context from `docs/ir-survey-202603.md`
 
+## Step 0: Literature Review (MANDATORY for non-trivial experiments)
+
+Before writing any design doc or code, you MUST do a thorough literature review:
+
+1. **Identify the core method(s)**: What technique(s) does this experiment use? (e.g., ColBERT, SPLADE, MarginMSE distillation, hard negative mining, RRF fusion)
+
+2. **Read the original paper(s)**: Use WebSearch and WebFetch to find and read the original paper for each method. For composite methods, read papers for ALL components.
+
+3. **Find recent improvements**: Search for 2-3 recent papers (2024-2026) that improve on the original method. Look for:
+   - Better training recipes or hyperparameters
+   - Known failure modes and fixes
+   - State-of-the-art results on Robust04 or similar TREC collections
+   - Implementation details that matter (e.g., correct pooling, prompt formats, tokenization quirks)
+
+4. **Check HuggingFace model cards**: For any pre-trained model you plan to use, read the model card thoroughly for:
+   - Correct usage patterns (prompts, prefixes, special tokens)
+   - Training data (to assess zero-shot transfer potential)
+   - Known limitations
+
+5. **Document findings**: Include a `## Literature Review` section in design.md with:
+   - Paper title, authors, venue, year, URL for each paper read
+   - Key takeaways relevant to this experiment
+   - Specific implementation details learned from the papers
+   - Expected performance based on published results
+
+Skip this step ONLY for simple baselines (e.g., BM25) where no research is needed.
+
 ## Setup Procedure
 
 Before writing any files, create the worktree:
@@ -39,9 +66,10 @@ All output files go inside the worktree.
 ### 1. `worktrees/{name}/design.md`
 Must include ALL of the following sections:
 
+- **Literature Review**: Papers read, key findings, citations (see Step 0)
 - **Goal**: What this experiment tries to achieve
-- **Hypothesis**: Why this should work
-- **Method**: High-level approach (changes from baseline)
+- **Hypothesis**: Why this should work (grounded in literature)
+- **Method**: High-level approach (changes from baseline), citing papers where applicable
 - **Key Parameters**: ALL hyperparameters — model name, batch size, learning rate, doc length, query length, training time budget, temperature, encode batch size, top-K, fusion parameters, etc.
 - **Runs**: List of planned runs. Each run has:
   - Run name (e.g., `baseline`, `alpha-sweep`, `with-reranker`)
@@ -66,6 +94,16 @@ The runnable experiment code. Requirements:
 - All print statements must use `flush=True`
 - Must save TREC run files via `write_trec_run()`
 - Entry point: `uv run train.py` (or `uv run --with <pkg> train.py` for extra deps)
+- If PyTerrier/Java is needed, train.py should configure Java at the top using the project script:
+  ```python
+  import subprocess, os
+  java_env = subprocess.run(["bash", "scripts/install_java.sh"], capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__)) + "/..")
+  for line in java_env.stdout.splitlines():
+      if line.strip().startswith("export "):
+          key, val = line.strip().replace("export ", "").split("=", 1)
+          os.environ[key] = val.strip('"')
+  ```
+  Or simpler: the runner agent sets JAVA_HOME and JVM_PATH env vars before running. Just ensure train.py doesn't hardcode Java paths.
 
 ## prepare.py API (DO NOT MODIFY)
 
@@ -154,3 +192,6 @@ Report back with:
 - Read `docs/plan.md` for experiment priorities
 - Read `docs/ir-survey-202603.md` for paper-backed ideas and baselines
 - Read `train.py` at project root for the current baseline code
+- Use WebSearch + WebFetch to read original papers and recent improvements
+- Check HuggingFace model cards for correct usage patterns
+- Read `results.tsv` for past experiment results and learnings from prior runs

@@ -27,3 +27,7 @@ f3eccbe	0.509512	0.328939	0.276203	0.492023	32.7	10169.0	keep	Qwen3-Embedding-0.
 f3eccbe	0.533502	0.326410	0.274252	0.481320	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	Linear(dense=0.5, sparse=0.5) fusion	exp05-hybrid-rrf
 f3eccbe	0.537182	0.296837	0.249962	0.440848	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	Linear(dense=0.7, sparse=0.3) fusion	exp05-hybrid-rrf
 f3eccbe	0.544458	0.334285	0.282739	0.496058	32.7	10169.0	keep	Qwen3-Reranker-0.6B	64	768	N/A	Linear-a03 fusion >> Qwen3-Reranker ml768 top-1000 (new best)	exp05-hybrid-rrf
+261cba6	0.308234	0.161268	0.119440	0.300179	21.0	5449.9	discard	colbertv2.0 (BROKEN)	256	180	N/A	ColBERT rerank BM25 top-1000 (projection head not loaded)	exp06-colbert
+261cba6	0.231054	0.093455	0.080869	0.192409	21.0	5449.9	discard	colbertv2.0 (BROKEN)	256	180	N/A	ColBERT full retrieval brute-force MaxSim (projection head not loaded)	exp06-colbert
+261cba6	0.471831	0.287438	0.243828	0.445204	21.0	5449.9	discard	colbertv2.0 (BROKEN)	256	180	N/A	ColBERT+BM25 linear fusion alpha=0.3 (broken ColBERT)	exp06-colbert
+261cba6	0.541087	0.322105	0.279204	0.490013	21.0	5449.9	discard	Qwen3-Reranker-0.6B	64	768	N/A	ColBERT+BM25 fusion >> Qwen3-Reranker (broken ColBERT first stage)	exp06-colbert

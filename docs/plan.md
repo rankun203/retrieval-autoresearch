@@ -5,11 +5,12 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-(none yet)
+**exp01-bm25-baseline** — MAP@100 = 0.2504, nDCG@10 = 0.4158, R@100 = 0.6002, MAP@1000 = 0.2816
+Method: BM25 (k1=1.2, b=0.75) + Bo1 PRF (fb_terms=10, fb_docs=3) via PyTerrier
 
 ## Targets
 
-- [ ] MAP@100 ≥ 0.20
+- [x] MAP@100 ≥ 0.20
 - [ ] MAP@100 > 0.25
 - [ ] MAP@100 > 0.30
 - [ ] MAP@100 > 0.40
@@ -18,7 +19,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Baseline
 
-- [ ] BM25+PRF baseline via pyterrier
+- [x] BM25+PRF baseline via pyterrier — DONE (MAP@100=0.2504, see exp01-bm25-baseline)
 
 ## Priority 1: Cross-encoder reranking
 

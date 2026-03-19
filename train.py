@@ -35,8 +35,8 @@ BO1_FB_TERMS = 30
 BM25_TOP_K = 1000
 RERANKER_MODEL = "Qwen/Qwen3-Reranker-0.6B"
 RERANK_DEPTHS = [100, 1000]
-BATCH_SIZE = 64
-MAX_LENGTH = 8192
+BATCH_SIZE = 8
+MAX_LENGTH = 4096
 INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
 
 peak_vram_mb = 0.0

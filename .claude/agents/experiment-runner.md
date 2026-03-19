@@ -1,7 +1,6 @@
 ---
 name: experiment-runner
 description: Runs retrieval experiments in git worktrees. Creates worktree, executes code, collects logs and run files. Use after experiment design is complete.
-tools: Read, Glob, Grep, Write, Edit, Bash
 model: opus
 maxTurns: 50
 ---

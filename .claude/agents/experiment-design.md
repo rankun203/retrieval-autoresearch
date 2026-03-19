@@ -1,7 +1,6 @@
 ---
 name: experiment-design
 description: Designs retrieval experiments. Creates design docs and initial train.py code. Use when starting a new experiment from the plan.
-tools: Read, Glob, Grep, Write, Bash, Agent(Explore), WebSearch, WebFetch
 model: opus
 maxTurns: 50
 ---

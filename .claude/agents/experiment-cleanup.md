@@ -1,7 +1,6 @@
 ---
 name: experiment-cleanup
 description: Archives experiment artifacts and closes git worktrees. Use after experiment review is complete.
-tools: Read, Bash, Glob, Write, Edit
 model: sonnet
 maxTurns: 15
 ---

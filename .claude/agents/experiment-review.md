@@ -1,8 +1,6 @@
 ---
 name: experiment-review
 description: Reviews experiments for data leakage, code quality, and results. Quality gate before results are logged. Use after experiment runner completes.
-tools: Read, Glob, Grep, Write, Edit, Bash
-disallowedTools: Agent
 model: opus
 maxTurns: 20
 ---

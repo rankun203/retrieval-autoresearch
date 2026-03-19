@@ -2,3 +2,9 @@ commit	ndcg@10	map@1000	map@100	recall@100	memory_gb	eval_dur	status	encoder	bat
 a2017e7	0.443651	0.251480	0.214081	0.410906	0.0	4.400	discard	BM25	N/A	N/A	N/A	Plain BM25 baseline (k1=0.9, b=0.4)	exp01-bm25-baseline
 a2017e7	0.466202	0.296779	0.250376	0.452732	0.0	22.558	keep	BM25+Bo1	N/A	N/A	N/A	BM25+Bo1 PRF baseline (fb_docs=5, fb_terms=30)	exp01-bm25-baseline
 4c9c319	0.428436	0.194195	0.169718	0.333891	3.8	0.111	discard	e5-base-v2	512	256	N/A	Zero-shot e5-base-v2 dense retrieval baseline	exp02-dense-baseline
+d23f40c	0.469730	0.235101	0.235101	0.452732	23.2	46.3	discard	ms-marco-MiniLM-L-6-v2	128	512	N/A	BM25+Bo1 >> MiniLM cross-encoder rerank top-100	exp03-cross-encoder-rerank
+d23f40c	0.464842	0.267575	0.225962	0.424190	23.2	241.5	discard	ms-marco-MiniLM-L-6-v2	128	512	N/A	BM25+Bo1 >> MiniLM cross-encoder rerank top-1000	exp03-cross-encoder-rerank
+d23f40c	0.505927	0.248673	0.248673	0.452732	23.2	344.5	discard	bge-reranker-v2-m3	64	512	N/A	BM25+Bo1 >> BGE reranker rerank top-100	exp03-cross-encoder-rerank
+d23f40c	0.504625	0.286437	0.243069	0.437638	23.2	3298.7	discard	bge-reranker-v2-m3	64	512	N/A	BM25+Bo1 >> BGE reranker rerank top-1000	exp03-cross-encoder-rerank
+d23f40c	0.225840	0.128492	0.128492	0.452732	23.2	314.9	discard	Qwen3-Reranker-0.6B	64	512	N/A	BM25+Bo1 >> Qwen3 reranker top-100 (BROKEN)	exp03-cross-encoder-rerank
+d23f40c	0.068552	0.050526	0.013797	0.106807	23.2	3176.8	discard	Qwen3-Reranker-0.6B	64	512	N/A	BM25+Bo1 >> Qwen3 reranker top-1000 (BROKEN)	exp03-cross-encoder-rerank

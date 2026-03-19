@@ -61,6 +61,10 @@ runs/                   — archived run artifacts (gitignored)
 worktrees/              — experiment worktrees (gitignored)
 ```
 
+## Previous runs
+
+The [`exp20260319-terminated-at-data-leakage`](../../tree/exp20260319-terminated-at-data-leakage) branch contains 45 experiments (exp1–exp45) that were terminated after discovering data leakage — hard negative mining used test queries and qrels during training, inflating results. The branch preserves all code, results, and run logs for reference. The current `master` branch starts fresh with the multi-agent system and proper data integrity enforcement.
+
 ## License
 
 MIT

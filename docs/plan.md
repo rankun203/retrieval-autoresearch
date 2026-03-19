@@ -5,7 +5,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-exp03b-qwen3-rerank-fix: Qwen3-Reranker-0.6B (ml768, top-1000), MAP@100=0.2668
+exp05-hybrid-rrf: BM25+Bo1 + Qwen3-Embedding-0.6B linear fusion + Qwen3-Reranker, MAP@100=0.2827
 
 ## Targets
 
@@ -21,7 +21,7 @@ exp03b-qwen3-rerank-fix: Qwen3-Reranker-0.6B (ml768, top-1000), MAP@100=0.2668
 - [x] BM25 baseline via pyterrier
 - [x] BM25+PRF baseline via pyterrier
 - [x] Dense retrieval baseline with e5-base-v2 — DISCARD: MAP@100=0.1697, below BM25+Bo1 baseline (0.2504); zero-shot e5-base-v2 insufficient for Robust04
-- [ ] Fusion baseline (RRF)
+- [x] Fusion baseline (RRF)
 
 ## Priority 1: Cross-encoder reranking
 
@@ -32,7 +32,7 @@ exp03b-qwen3-rerank-fix: Qwen3-Reranker-0.6B (ml768, top-1000), MAP@100=0.2668
 
 ## Priority 2: Better backbones
 
-- [ ] `Qwen/Qwen3-Embedding-0.6B` — 0.6B params, MTEB-en retrieval 61.83, 32K context, ~1.2GB
+- [x] `Qwen/Qwen3-Embedding-0.6B` — 0.6B params, MTEB-en retrieval 61.83, 32K context, ~1.2GB
 - [ ] `Qwen/Qwen3-Embedding-8B` — 8B params, #1 MTEB multilingual (70.58), 32K context, ~16GB
 - [ ] `jinaai/jina-embeddings-v4` — 3.8B params, multimodal, MTEB-en 55.97, ~8GB
 - [ ] `nomic-ai/modernbert-embed-base` — small/fast, 8K context
@@ -49,7 +49,7 @@ exp03b-qwen3-rerank-fix: Qwen3-Reranker-0.6B (ml768, top-1000), MAP@100=0.2668
 
 ## Priority 4: Hybrid retrieval
 
-- [ ] Dense + BM25 fusion (RRF and linear interpolation)
+- [x] Dense + BM25 fusion (RRF and linear interpolation) — KEEP (exp05): linear fusion alpha=0.5 + Qwen3-Reranker achieved MAP@100=0.2827 (new best), +5.9% over exp03b; fusion consistently outperforms either component alone
 - [ ] SPLADE-style sparse augmentation on top of dense
 
 ## Priority 5: Advanced methods (from survey)

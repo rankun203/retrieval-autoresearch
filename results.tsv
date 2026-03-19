@@ -19,3 +19,11 @@ f2fadf5	0.528786	0.312002	0.266773	0.477631	20.3	4832.9	keep	Qwen3-Reranker-0.6B
 48a6b4e	0.534460	-1	0.261780	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker general-long instruction top-100	exp04-qwen3-instructions
 48a6b4e	0.542921	-1	0.266744	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker news-short instruction top-100 (best)	exp04-qwen3-instructions
 48a6b4e	0.536429	-1	0.263883	0.452732	20.3	497.2	discard	Qwen3-Reranker-0.6B	64	768	N/A	Qwen3 reranker news-long instruction top-100	exp04-qwen3-instructions
+f3eccbe	0.502590	0.241173	0.210465	0.391128	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	Zero-shot Qwen3-Embedding-0.6B dense retrieval	exp05-hybrid-rrf
+f3eccbe	0.534235	0.323469	0.271797	0.491383	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	RRF(BM25+Bo1, Qwen3-Embed) k=10	exp05-hybrid-rrf
+f3eccbe	0.533979	0.322374	0.270378	0.489296	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	RRF(BM25+Bo1, Qwen3-Embed) k=60	exp05-hybrid-rrf
+f3eccbe	0.531707	0.319412	0.267145	0.488726	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	RRF(BM25+Bo1, Qwen3-Embed) k=100	exp05-hybrid-rrf
+f3eccbe	0.509512	0.328939	0.276203	0.492023	32.7	10169.0	keep	Qwen3-Embedding-0.6B	256	512	N/A	Linear(dense=0.3, sparse=0.7) fusion (no rerank)	exp05-hybrid-rrf
+f3eccbe	0.533502	0.326410	0.274252	0.481320	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	Linear(dense=0.5, sparse=0.5) fusion	exp05-hybrid-rrf
+f3eccbe	0.537182	0.296837	0.249962	0.440848	32.7	10169.0	discard	Qwen3-Embedding-0.6B	256	512	N/A	Linear(dense=0.7, sparse=0.3) fusion	exp05-hybrid-rrf
+f3eccbe	0.544458	0.334285	0.282739	0.496058	32.7	10169.0	keep	Qwen3-Reranker-0.6B	64	768	N/A	Linear-a03 fusion >> Qwen3-Reranker ml768 top-1000 (new best)	exp05-hybrid-rrf

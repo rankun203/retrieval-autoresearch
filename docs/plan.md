@@ -63,6 +63,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 - [x] exp30: Hard negative mining: 2-phase (300s MS-MARCO + 300s mixed MS-MARCO/Robust04 HN) → dense MAP@100=0.236 (up from 0.180), hybrid RRF MAP@100=0.3275 (best w/o reranker), +reranker MAP@100=0.3149 (reranker hurts!)
 - [x] exp29: MarginMSE distillation → dense MAP@100=0.156 (worse than 0.180 baseline). Loss flat ~10.5, scaling broken. Discarded
 - [x] exp31: Gradient accum (4 steps, eff batch=512) + cosine LR (2e-5→0) → fused MAP@100=0.286 (worse than exp30 0.3275). Too aggressive — discarded
+- [x] exp45: 4-phase HN mining (200s*4=800s) + linear interp(0.6) → dense MAP@100=0.2509 (WORSE than 3-phase 0.3152), fused MAP@100=0.3321 (below 0.3651 baseline). 4th phase degrades model — diminishing returns crossed into negative territory. Discarded
 
 ## Priority 4: Hybrid retrieval
 

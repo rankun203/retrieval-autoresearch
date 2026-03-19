@@ -103,7 +103,7 @@ peak_vram_mb:     XXXXX.X
 num_steps:        NNNN
 encoder_model:    MODEL_NAME
 num_docs_indexed: NNNNNN
-eval_duration:    NNN.NNN
+eval_duration:    NNN.NNN   # IMPORTANT: total retrieval pipeline time (query encoding + indexing + search + reranking), NOT just evaluate_run() time
 loss_curve:       0%:L0  10%:L1  ...  100%:L10
 budget_assessment: OK|UNDERTRAINED|OVERFIT/PLATEAU
 ```

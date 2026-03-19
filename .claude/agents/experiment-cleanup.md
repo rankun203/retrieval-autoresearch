@@ -73,7 +73,7 @@ If this fails (e.g., not enough data points yet), skip it.
 
 ```bash
 cd /home/ubuntu/projects/retrieval-autoresearch
-git add results.tsv docs/plan.md progress.png 2>/dev/null
+git add results.tsv docs/plan.md progress.svg 2>/dev/null
 git commit -m "Close {name}: {one-line summary of outcome}"
 ```
 

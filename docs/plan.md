@@ -20,7 +20,7 @@ exp01-bm25-baseline: BM25+Bo1 PRF, MAP@100=0.2504
 
 - [x] BM25 baseline via pyterrier
 - [x] BM25+PRF baseline via pyterrier
-- [ ] Dense retrieval baseline with e5-base-v2
+- [x] Dense retrieval baseline with e5-base-v2 — DISCARD: MAP@100=0.1697, below BM25+Bo1 baseline (0.2504); zero-shot e5-base-v2 insufficient for Robust04
 - [ ] Fusion baseline (RRF)
 
 ## Priority 1: Cross-encoder reranking

@@ -55,14 +55,18 @@ PYTHONUNBUFFERED=1 uv run train.py >> logs/run_{name}_{run_name}.log 2>&1
 - For extra dependencies: `uv run --with <pkg> train.py`
 
 ### Java/PyTerrier Setup
-If the experiment uses PyTerrier, set up Java before running train.py:
+If the experiment uses PyTerrier, you MUST set up Java before running train.py. Run this to get the env vars:
 ```bash
 cd /home/ubuntu/projects/retrieval-autoresearch
 bash scripts/install_java.sh  # installs if needed, prints env vars if already installed
 export JAVA_HOME="$(pwd)/libs/openjdk"
 export JVM_PATH="$(find libs/openjdk -name 'libjvm.*' | head -1)"
 ```
-Then include `JAVA_HOME` and `JVM_PATH` in the env when running train.py.
+Then pass these as env vars when running train.py:
+```bash
+JAVA_HOME="$JAVA_HOME" JVM_PATH="$JVM_PATH" PYTHONUNBUFFERED=1 uv run ... train.py
+```
+Do NOT hardcode paths like `/usr/lib/jvm/java-21-amazon-corretto` — always use the project-local Java from `scripts/install_java.sh`.
 
 ### Handling Failures
 

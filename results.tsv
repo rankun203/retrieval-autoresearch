@@ -34,3 +34,6 @@ f3eccbe	0.544458	0.334285	0.282739	0.496058	32.7	10169.0	keep	Qwen3-Reranker-0.6
 78e3b87	0.558091	0.304677	0.264414	0.459638	21.9	34520.9	discard	Qwen3-Embedding-8B	64	512	N/A	Zero-shot Qwen3-Embedding-8B dense retrieval	exp07-qwen3-embed-8b
 78e3b87	0.525751	0.349542	0.292921	0.510254	21.9	34520.9	keep	Qwen3-Embedding-8B	64	512	N/A	Linear(dense=0.3, sparse=0.7) fusion with 8B embeddings (new best)	exp07-qwen3-embed-8b
 78e3b87	0.538441	0.334512	0.279705	0.498937	21.9	34520.9	discard	Qwen3-Reranker-0.6B	64	768	N/A	Linear-a03 fusion >> Qwen3-Reranker (reranking hurt)	exp07-qwen3-embed-8b
+9f1d087	0.447492	0.208833	0.184407	0.345055	24.4	5879.6	discard	colbertv2.0	256	180	N/A	ColBERTv2 standalone retrieval via PLAID (PyLate)	exp08-colbert-v2
+9f1d087	0.499207	0.319531	0.268940	0.480966	24.4	5879.6	discard	colbertv2.0+BM25	256	180	N/A	ColBERTv2+BM25 linear fusion alpha=0.3	exp08-colbert-v2
+9f1d087	0.543580	0.336157	0.286986	0.498544	24.4	5879.6	discard	Qwen3-Reranker-0.6B	64	768	N/A	ColBERTv2+BM25 fusion >> Qwen3-Reranker	exp08-colbert-v2

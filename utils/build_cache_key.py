@@ -29,7 +29,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path(__file__).parent.parent
 CACHE_DIR = PROJECT_ROOT / ".cache"
 METADATA_FILE = "metadata.json"
 

@@ -125,7 +125,7 @@ Encoding 528K documents with large models can take hours (e.g., Qwen3-Embedding-
 Use `build_cache_key.py` at project root:
 
 ```python
-from build_cache_key import get_cache_path, save_cache_metadata
+from utils.build_cache_key import get_cache_path, save_cache_metadata
 import numpy as np
 
 # Build cache path — ALL parameters that affect output must be included

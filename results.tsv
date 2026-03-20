@@ -37,3 +37,9 @@ f3eccbe	0.544458	0.334285	0.282739	0.496058	32.7	10169.0	keep	Qwen3-Reranker-0.6
 9f1d087	0.447492	0.208833	0.184407	0.345055	24.4	5879.6	discard	colbertv2.0	256	180	N/A	ColBERTv2 standalone retrieval via PLAID (PyLate)	exp08-colbert-v2
 9f1d087	0.499207	0.319531	0.268940	0.480966	24.4	5879.6	discard	colbertv2.0+BM25	256	180	N/A	ColBERTv2+BM25 linear fusion alpha=0.3	exp08-colbert-v2
 9f1d087	0.543580	0.336157	0.286986	0.498544	24.4	5879.6	discard	Qwen3-Reranker-0.6B	64	768	N/A	ColBERTv2+BM25 fusion >> Qwen3-Reranker	exp08-colbert-v2
+1741362	0.455338	0.222558	0.193507	0.380684	6.2	4424.6	discard	e5-large-v2	256	512	N/A	Zero-shot e5-large-v2 dense retrieval	exp10-backbone-sweep
+1741362	0.511255	0.331360	0.280164	0.495554	6.2	4424.6	discard	e5-large-v2	256	512	N/A	e5-large-v2 + BM25+Bo1 linear fusion alpha=0.3	exp10-backbone-sweep
+1741362	0.458975	0.219666	0.190147	0.366498	6.2	4424.6	discard	bge-base-en-v1.5	512	512	N/A	Zero-shot bge-base-en-v1.5 dense retrieval	exp10-backbone-sweep
+1741362	0.502061	0.324631	0.272627	0.488385	6.2	4424.6	discard	bge-base-en-v1.5	512	512	N/A	bge-base-en-v1.5 + BM25+Bo1 linear fusion alpha=0.3	exp10-backbone-sweep
+1741362	0.452095	0.211400	0.183781	0.350109	6.2	4424.6	discard	modernbert-embed-base	512	512	N/A	Zero-shot modernbert-embed-base dense retrieval	exp10-backbone-sweep
+1741362	0.503303	0.323515	0.272272	0.481600	6.2	4424.6	discard	modernbert-embed-base	512	512	N/A	modernbert-embed-base + BM25+Bo1 linear fusion alpha=0.3	exp10-backbone-sweep

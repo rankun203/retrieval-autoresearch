@@ -5,7 +5,7 @@ Reference: `docs/ir-survey-202603.md` for paper details and results.
 
 ## Current best
 
-exp05-hybrid-rrf: BM25+Bo1 + Qwen3-Embedding-0.6B linear fusion + Qwen3-Reranker, MAP@100=0.2827
+exp07-qwen3-embed-8b: BM25+Bo1 + Qwen3-Embedding-8B linear fusion (alpha=0.3), MAP@100=0.2929
 
 ## Targets
 
@@ -33,7 +33,7 @@ exp05-hybrid-rrf: BM25+Bo1 + Qwen3-Embedding-0.6B linear fusion + Qwen3-Reranker
 ## Priority 2: Better backbones
 
 - [x] `Qwen/Qwen3-Embedding-0.6B` — 0.6B params, MTEB-en retrieval 61.83, 32K context, ~1.2GB
-- [ ] `Qwen/Qwen3-Embedding-8B` — 8B params, #1 MTEB multilingual (70.58), 32K context, ~16GB
+- [x] `Qwen/Qwen3-Embedding-8B` — 8B params, #1 MTEB multilingual (70.58), 32K context, ~16GB — KEEP (exp07): BM25+Bo1 linear fusion alpha=0.3 achieves MAP@100=0.2929 (new best); reranking with Qwen3-Reranker HURT performance (linear-a03-reranked < linear-a03), suggesting 8B embeddings already capture sufficient semantic signal
 - [ ] `jinaai/jina-embeddings-v4` — 3.8B params, multimodal, MTEB-en 55.97, ~8GB
 - [ ] `nomic-ai/modernbert-embed-base` — small/fast, 8K context
 - [ ] `intfloat/e5-large-v2` with proper batch size

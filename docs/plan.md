@@ -56,7 +56,7 @@ exp07-qwen3-embed-8b: BM25+Bo1 + Qwen3-Embedding-8B linear fusion (alpha=0.3), M
 
 - [x] ColBERT late interaction — DISCARD (exp06): all runs below current best; implementation bug: projection head not loaded correctly, token embeddings were not properly projected. Should be retried with correct ColBERT model loading (load full checkpoint including projection head).
 - [x] ColBERT v2 via PyLate (correct implementation) — DISCARD (exp08): implementation now correct via PyLate, but ColBERTv2 standalone achieves only MAP@100=0.1844 due to domain mismatch (trained on MS-MARCO, tested on Robust04 news). BM25+ColBERT fusion reaches 0.2870 and fusion+rerank reaches same 0.2870, both below current best 0.2929. Domain mismatch limits ColBERT gains on news domain.
-- [ ] Listwise reranking with LLM (RankGPT-style)
+- [x] Listwise reranking with LLM (RankGPT-style) — DISCARD (exp11): RankZephyr 7B listwise reranking on 0.6B fusion, best MAP@100=0.2822 (rerank-top50), nDCG@10 improved +8.5% but MAP limited by recall@100 bottleneck; reranking cannot recover docs not in the initial retrieval pool
 - [ ] Document expansion: generate synthetic queries per document (docT5query-style)
 
 ## Priority 6: Agentic retrieval (see docs/agentic-retrieval-research.md)

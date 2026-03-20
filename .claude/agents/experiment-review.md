@@ -29,6 +29,7 @@ Must include:
 
 - **Data Leakage Check**: PASS or FAIL with specific evidence (line numbers, code excerpts)
 - **Code Quality**: Issues found, suggestions for improvement
+- **Cache Verification**: If cached artifacts were used (embeddings, indexes), verify from the log that the correct cache was loaded (check cache path includes correct model name, parameters, dataset)
 - **Design Adherence**: Did the runs match what design.md specified?
 - **Performance Analysis**: Metrics vs expectations, vs baseline, vs current best
 - **Budget Assessment**: Note UNDERTRAINED/OK/OVERFIT from the log output

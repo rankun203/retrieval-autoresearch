@@ -43,3 +43,7 @@ f3eccbe	0.544458	0.334285	0.282739	0.496058	32.7	10169.0	keep	Qwen3-Reranker-0.6
 1741362	0.502061	0.324631	0.272627	0.488385	6.2	4424.6	discard	bge-base-en-v1.5	512	512	N/A	bge-base-en-v1.5 + BM25+Bo1 linear fusion alpha=0.3	exp10-backbone-sweep
 1741362	0.452095	0.211400	0.183781	0.350109	6.2	4424.6	discard	modernbert-embed-base	512	512	N/A	Zero-shot modernbert-embed-base dense retrieval	exp10-backbone-sweep
 1741362	0.503303	0.323515	0.272272	0.481600	6.2	4424.6	discard	modernbert-embed-base	512	512	N/A	modernbert-embed-base + BM25+Bo1 linear fusion alpha=0.3	exp10-backbone-sweep
+bb3ee48	0.513801	0.331637	0.278109	0.491430	0.0	N/A	discard	Qwen3-Embedding-0.6B	256	512	N/A	Qwen3-0.6B + BM25+Bo1 fusion baseline (no rerank)	exp11-llm-rerank
+bb3ee48	0.543037	0.329612	0.276084	0.491430	13.7	565.0	discard	RankZephyr-7B	N/A	100w	N/A	Fusion >> RankZephyr listwise rerank top-20 (w=20,s=10)	exp11-llm-rerank
+bb3ee48	0.553349	0.335686	0.282158	0.491430	13.7	3264.4	discard	RankZephyr-7B	N/A	100w	N/A	Fusion >> RankZephyr listwise rerank top-50 (w=20,s=10)	exp11-llm-rerank
+bb3ee48	0.557311	0.335516	0.281989	0.491430	13.7	7816.8	discard	RankZephyr-7B	N/A	100w	N/A	Fusion >> RankZephyr listwise rerank top-100 (w=20,s=10)	exp11-llm-rerank

@@ -94,6 +94,7 @@ The runnable experiment code. Requirements:
 - Must save TREC run files via `write_trec_run()`
 - Entry point: `uv run train.py` (or `uv run --with <pkg> train.py` for extra deps)
 - Do NOT hardcode Java paths in train.py. The runner agent handles Java setup via `scripts/install_java.sh` and exports JAVA_HOME/JVM_PATH before running.
+- **MUST cache expensive artifacts** (embeddings, indexes) to `.cache/` at project root. See caching section below.
 
 ## prepare.py API (DO NOT MODIFY)
 
@@ -116,6 +117,43 @@ stream_msmarco_triples() -> Iterator[(query, pos_text, neg_text)]
 TIME_BUDGET = 600  # seconds of training wall-clock time
 DATA_DIR = Path("~/.cache/autoresearch-retrieval")
 ```
+
+## Caching Expensive Artifacts (MANDATORY)
+
+Encoding 528K documents with large models can take hours (e.g., Qwen3-Embedding-8B took 8.5 hours). train.py MUST cache embeddings, indexes, and other expensive artifacts to avoid recomputation on re-runs or crashes.
+
+Use `build_cache_key.py` at project root:
+
+```python
+from build_cache_key import get_cache_path
+import numpy as np
+
+# Build cache path — ALL parameters that affect output must be included
+cache_dir = get_cache_path("embeddings", model="Qwen/Qwen3-Embedding-8B", max_length=512, pooling="last_token")
+embeddings_path = cache_dir / "doc_embeddings.npy"
+
+if embeddings_path.exists():
+    print("Loading cached embeddings...", flush=True)
+    doc_embeddings = np.load(embeddings_path)
+else:
+    print("Encoding documents...", flush=True)
+    doc_embeddings = encode_all_docs(...)
+    np.save(embeddings_path, doc_embeddings)
+    print(f"Cached embeddings to {embeddings_path}", flush=True)
+```
+
+Cache types and what to cache:
+- `embeddings` — document/query embedding arrays (numpy .npy files)
+- `index` — FAISS indexes (.index files)
+- `colbert_index` — ColBERT/PLAID indexes
+- `bm25_run` — BM25 retrieval results (pickle or JSON)
+
+Rules:
+- Cache key MUST include ALL parameters that affect the output (model name, max_length, pooling method, etc.)
+- Cache files go under `.cache/{cache_key}/` at project root
+- Always check if cache exists before computing
+- Print whether loading from cache or computing fresh
+- `.cache/` is gitignored
 
 ## Summary Format (train.py must print this at the end)
 

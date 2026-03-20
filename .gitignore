@@ -22,3 +22,5 @@ run.log
 
 # JDK
 libs/
+
+.cache/

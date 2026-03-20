@@ -2,22 +2,19 @@
 Build stable cache keys for experiment artifacts (embeddings, indexes, etc.).
 
 Usage:
-    from build_cache_key import build_cache_key, get_cache_path, save_cache_metadata, verify_cache_metadata
+    from build_cache_key import get_cache_path, save_cache_metadata
 
-    # Get cache path (creates dir + writes metadata.json)
-    path = get_cache_path("embeddings", model="Qwen/Qwen3-Embedding-8B",
-                          max_length=512, pooling="last_token", dataset="robust04")
-    # -> Path(".cache/embeddings_Qwen_Qwen3-Embedding-8B_dataset-robust04_max_length-512_pooling-last_token/")
+    cache_params = dict(model="Qwen/Qwen3-Embedding-8B", max_length=512, pooling="last_token", dataset="robust04")
+    cache_dir = get_cache_path("embeddings", **cache_params)
+    embeddings_path = cache_dir / "doc_embeddings.npy"
 
-    # Check if cache exists and metadata matches
-    if verify_cache_metadata(path, cache_type="embeddings", model="Qwen/Qwen3-Embedding-8B",
-                             max_length=512, pooling="last_token", dataset="robust04"):
-        embeddings = np.load(path / "doc_embeddings.npy")
+    if embeddings_path.exists():
+        print(f"Loading cached embeddings from {cache_dir}", flush=True)
+        doc_embeddings = np.load(embeddings_path)
     else:
-        embeddings = encode_all_docs(...)
-        np.save(path / "doc_embeddings.npy", embeddings)
-        save_cache_metadata(path, cache_type="embeddings", model="Qwen/Qwen3-Embedding-8B",
-                            max_length=512, pooling="last_token", dataset="robust04")
+        doc_embeddings = encode_all_docs(...)
+        np.save(embeddings_path, doc_embeddings)
+        save_cache_metadata(cache_dir, cache_type="embeddings", **cache_params)
 
 Cache types:
     - embeddings: document/query embedding arrays
@@ -82,7 +79,7 @@ def get_cache_path(cache_type: str, *, model: str, **params) -> Path:
 def save_cache_metadata(cache_path: Path, *, cache_type: str, model: str, **params) -> None:
     """Write metadata.json to the cache directory with full parameters.
 
-    The metadata allows readers to verify they're loading the correct artifact.
+    Allows reviewers to inspect what artifact was cached and verify correctness.
     """
     metadata = {
         "cache_type": cache_type,
@@ -92,33 +89,3 @@ def save_cache_metadata(cache_path: Path, *, cache_type: str, model: str, **para
     }
     with open(cache_path / METADATA_FILE, "w") as f:
         json.dump(metadata, f, indent=2, default=str)
-
-
-def verify_cache_metadata(cache_path: Path, *, cache_type: str, model: str, **params) -> bool:
-    """Verify that a cache directory's metadata.json matches the expected parameters.
-
-    Returns True if metadata exists and all parameters match. Returns False if
-    metadata is missing or any parameter differs.
-    """
-    meta_path = cache_path / METADATA_FILE
-    if not meta_path.exists():
-        return False
-
-    try:
-        with open(meta_path) as f:
-            metadata = json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return False
-
-    if metadata.get("cache_type") != cache_type:
-        return False
-    if metadata.get("model") != model:
-        return False
-
-    for key, expected in params.items():
-        stored = metadata.get(key)
-        # Compare as strings to handle type mismatches (e.g., int vs str)
-        if str(stored) != str(expected):
-            return False
-
-    return True

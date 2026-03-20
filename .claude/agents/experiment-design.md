@@ -125,7 +125,7 @@ Encoding 528K documents with large models can take hours (e.g., Qwen3-Embedding-
 Use `build_cache_key.py` at project root:
 
 ```python
-from build_cache_key import get_cache_path, save_cache_metadata, verify_cache_metadata
+from build_cache_key import get_cache_path, save_cache_metadata
 import numpy as np
 
 # Build cache path — ALL parameters that affect output must be included
@@ -133,8 +133,8 @@ cache_params = dict(model="Qwen/Qwen3-Embedding-8B", max_length=512, pooling="la
 cache_dir = get_cache_path("embeddings", **cache_params)
 embeddings_path = cache_dir / "doc_embeddings.npy"
 
-if verify_cache_metadata(cache_dir, cache_type="embeddings", **cache_params):
-    print("Loading cached embeddings (metadata verified)...", flush=True)
+if embeddings_path.exists():
+    print(f"Loading cached embeddings from {cache_dir}", flush=True)
     doc_embeddings = np.load(embeddings_path)
 else:
     print("Encoding documents...", flush=True)
@@ -144,7 +144,7 @@ else:
     print(f"Cached embeddings to {cache_dir}", flush=True)
 ```
 
-Each cache directory gets a `metadata.json` with full parameters (model, dataset, max_length, etc.) so readers can verify they're loading the correct artifact.
+Each cache directory gets a `metadata.json` with full parameters (model, dataset, max_length, etc.). The reviewer checks the log to verify the correct cache was used.
 
 Cache types and what to cache:
 - `embeddings` — document/query embedding arrays (numpy .npy files)

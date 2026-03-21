@@ -41,6 +41,10 @@ exp12-doc-expansion (0.6B class best): BM25+Bo1 + Qwen3-Embedding-0.6B fusion-a0
 - [x] `BAAI/bge-base-en-v1.5` as alternative to e5 — DISCARD (exp10): tested in exp10-backbone-sweep, fusion MAP@100 ranged 0.2723-0.2802, did not beat Qwen3-8B fusion (0.2929)
 - [ ] Utilize query variants to improve query performance (for evaluation, besides standard metrics, also look at good, medium and bad quality title queries and respective results)
 
+## BM25/PRF parameter tuning
+
+- [x] BM25/PRF parameter sweep — DISCARD (exp09): 210 configs tested across BM25-only, RM3, Bo1, KL variants; best KL MAP@100=0.2503, confirms default baseline params near-optimal; no meaningful gain from tuning b/k1/feedback terms
+
 ## Priority 3: Training improvements
 
 - [ ] Hard negative mining (iterative, multi-phase) — use Qwen3.5-9B as relevance judge (never touch qrels for mining)

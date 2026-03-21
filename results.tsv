@@ -47,3 +47,7 @@ bb3ee48	0.513801	0.331637	0.278109	0.491430	0.0	N/A	discard	Qwen3-Embedding-0.6B
 bb3ee48	0.543037	0.329612	0.276084	0.491430	13.7	565.0	discard	RankZephyr-7B	N/A	100w	N/A	Fusion >> RankZephyr listwise rerank top-20 (w=20,s=10)	exp11-llm-rerank
 bb3ee48	0.553349	0.335686	0.282158	0.491430	13.7	3264.4	discard	RankZephyr-7B	N/A	100w	N/A	Fusion >> RankZephyr listwise rerank top-50 (w=20,s=10)	exp11-llm-rerank
 bb3ee48	0.557311	0.335516	0.281989	0.491430	13.7	7816.8	discard	RankZephyr-7B	N/A	100w	N/A	Fusion >> RankZephyr listwise rerank top-100 (w=20,s=10)	exp11-llm-rerank
+ab58e59	0.488574	0.323509	0.274441	0.480474	18.4	2.235	discard	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) BM25+Bo1 only	exp12-doc-expansion
+ab58e59	0.503494	0.242845	0.211114	0.390085	18.4	2.235	discard	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) dense only	exp12-doc-expansion
+ab58e59	0.524312	0.344337	0.290338	0.505722	18.4	2.235	keep	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) + fusion a03 (new 0.6B best)	exp12-doc-expansion
+ab58e59	0.546176	0.334244	0.280585	0.487516	18.4	2.235	discard	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) + fusion a05	exp12-doc-expansion

@@ -1,90 +1,120 @@
-# Experiment: exp07-qwen3-embed-8b
+# exp09b-dph-lm-sweep: Alternative Retrieval Models with PRF
+
+## Literature Review
+
+This experiment uses classical probabilistic and language model retrieval methods available in Terrier. These are well-established methods that do not require a deep literature review, but key references:
+
+- **DPH (Divergence from Randomness - Hypergeometric)**: Amati et al. (2006). "Frequentist and Bayesian Approach to IR". ECIR. DPH is parameter-free (no k1/b equivalent), making it attractive for collections where tuning is impractical. PyTerrier's official Robust04 baselines report DPH+KL = MAP@1000=0.2857, higher than BM25+Bo1=0.2795.
+
+- **InL2 (Inverse Document Frequency with Laplace after-effect)**: Amati & Van Rijsbergen (2002). "Probabilistic models of IR based on measuring the divergence from randomness". ACM TOIS. Has a single parameter `c` (term frequency normalization, default 1.0). Part of the DFR framework.
+
+- **PL2 (Poisson model with Laplace after-effect)**: Same DFR framework as InL2. Single parameter `c`. Uses Poisson distribution for term frequency modeling rather than inverse document frequency.
+
+- **DirichletLM**: Zhai & Lafferty (2001). "A Study of Smoothing Methods for Language Models Applied to Ad Hoc IR". SIGIR. Bayesian smoothing with Dirichlet prior. Single parameter mu (default 2500). Well-studied; optimal mu typically 1000-5000 for news collections.
+
+- **Hiemstra_LM**: Hiemstra (2000). "A Probabilistic Justification for Using tf x idf Term Weighting in IR". Int. J. on Digital Libraries. Jelinek-Mercer-style smoothing with parameter lambda (default 0.15).
+
+- **Key finding for Robust04**: PyTerrier official baselines show DPH consistently competitive with BM25 on Robust04. DPH+KL (MAP@1000=0.2857) outperforms BM25+Bo1 (MAP@1000=0.2795). The parameter-free nature of DPH makes it robust to collection-specific tuning failures.
+
+- **Multi-system fusion**: Fox & Shaw (1994). "Combination of Multiple Searches". TREC-3. CombSUM (sum of normalized scores) benefits from diverse retrieval models. Robertson (2007). "On Score Adjustment for Comparison and Combination". TREC.
 
 ## Goal
 
-Replace Qwen3-Embedding-0.6B with Qwen3-Embedding-8B in the proven hybrid retrieval + reranking pipeline from exp05. The 8B model is the top-ranked model on MTEB multilingual (score 70.58 vs 0.6B's 64.33) and should provide substantially stronger dense retrieval, improving hybrid fusion quality and final reranking results.
+Test alternative probabilistic retrieval models (DPH, InL2, PL2, DirichletLM, Hiemstra_LM) with PRF on Robust04, and explore multi-system fusion of diverse retrieval models. These models may outperform BM25 as first-stage retrievers, directly improving all downstream fusion pipelines.
 
 ## Hypothesis
 
-The Qwen3-Embedding-8B model produces 4096-dimensional embeddings (vs 1024 for 0.6B) from an 8B parameter decoder backbone. Its MTEB retrieval score (70.88 en) is roughly 10% higher than the 0.6B variant (64.64). Since the 0.6B zero-shot dense retrieval achieved MAP@100=0.2105, the 8B model should achieve approximately MAP@100=0.25-0.28. When fused with BM25+Bo1 (alpha=0.3 dense, 0.7 sparse) and reranked by Qwen3-Reranker-0.6B, the stronger first-stage candidates should push MAP@100 above the current best of 0.2827.
-
-### Literature Context
-
-- **Qwen3-Embedding-8B**: 8B params, 36 layers, 4096-dim embeddings, 32K context, last-token pooling, instruction-aware. Uses same `Instruct: ...\nQuery:` format as 0.6B. Supports Matryoshka Representation Learning (MRL) for flexible output dimensions.
-- **Hybrid retrieval**: exp05 demonstrated that linear fusion (alpha=0.3) + reranking consistently beats either component alone. The gain from fusion should be even larger with a stronger dense component.
+1. DPH (parameter-free) with KL query expansion should match or exceed BM25+Bo1 based on published PyTerrier baselines.
+2. DirichletLM with tuned mu may perform well on news corpora where document lengths vary significantly.
+3. Fusing diverse retrieval models (DPH + BM25 + LM) can improve recall beyond any single model, because different models retrieve different relevant documents.
+4. Best single-model configuration could reach MAP@100 > 0.255 (current BM25+Bo1 = 0.2504).
 
 ## Method
 
-1. **BM25+Bo1 retrieval**: Reuse cached Terrier index, retrieve top-1000 per query
-2. **Qwen3-Embedding-8B dense retrieval**: Zero-shot encoding of all 528K corpus documents and 249 queries using fp16 with flash_attention_2, FAISS flat inner product search, retrieve top-1000. Use full 4096-dim embeddings.
-3. **Linear fusion**: alpha=0.3 (dense=0.3, sparse=0.7) -- the best from exp05
-4. **Reranking**: Free embedding model from GPU, then load Qwen3-Reranker-0.6B with news-short instruction, ml768, rerank top-1000
+Four-phase sweep:
 
-### Qwen3-Embedding-8B Usage (from model card)
+1. **Phase 1**: Base model evaluation (no PRF) for DPH, InL2, PL2, DirichletLM, Hiemstra_LM, with parameter sweeps where applicable. BM25 reference included.
+2. **Phase 2**: PRF sweep (Bo1, KL) on all base models using best parameter from Phase 1.
+3. **Phase 3**: RM3 on top-2 models from Phase 2.
+4. **Phase 4**: Multi-system fusion of best diverse configurations.
 
-- Query format: `Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:{query_text}`
-- Document format: raw text (no instruction)
-- Pooling: last token (via `last_token_pool` function)
-- Model class: `AutoModel` (not `AutoModelForCausalLM`)
-- Normalize embeddings to unit length (cosine similarity)
-- padding_side: left (required for last-token pooling)
-- Embedding dimension: 4096
+All runs use PyTerrier with the cached Terrier index. CPU-only, no GPU needed.
 
 ## Key Parameters
 
-| Parameter | Value | Notes |
-|-----------|-------|-------|
-| Embedding model | Qwen/Qwen3-Embedding-8B | 8B params, 4096-dim |
-| Reranker model | Qwen/Qwen3-Reranker-0.6B | Same as exp05 |
-| Doc max length | 512 tokens | Balance quality/speed for 528K docs |
-| Query max length | 512 tokens | Generous for Robust04 title queries |
-| Encode batch size | 64 | ~25GB VRAM with 8B model fp16 |
-| BM25 k1/b | 0.9/0.4 | From exp01 |
-| Bo1 fb_docs/fb_terms | 5/30 | From exp01 |
-| BM25 top-K | 1000 | Standard depth |
-| Dense top-K | 1000 | Standard depth |
-| Fusion alpha | 0.3 | Best from exp05 (dense=0.3, sparse=0.7) |
-| Reranker max_length | 768 | Best from exp03b |
-| Reranker batch_size | 64 | From exp03b |
-| Reranker depth | 1000 | Best from exp03b |
-| Reranker instruction | news-short | Best from exp04 |
+### Base Models (PyTerrier wmodel names)
+- `DPH` -- parameter-free
+- `InL2` -- parameter c (default 1.0), sweep [0.5, 1.0, 2.0, 5.0, 10.0]
+- `PL2` -- parameter c (default 1.0), sweep [0.5, 1.0, 2.0, 5.0, 10.0]
+- `DirichletLM` -- parameter mu (default 2500), sweep [500, 1000, 1500, 2000, 2500, 3000, 5000]
+- `Hiemstra_LM` -- parameter lambda (default 0.15), sweep [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]
+- `BM25` -- k1=0.9, b=0.4 (baseline reference from exp01)
+
+### PRF Grid
+- **Bo1**: fb_docs=[3, 5, 10], fb_terms=[10, 20, 30, 50]
+- **KL**: fb_docs=[3, 5, 10], fb_terms=[10, 20, 30, 50]
+- **RM3**: fb_docs=[5, 10], fb_terms=[20, 30], fb_lambda=[0.5, 0.7] (only on top-2 models)
+
+### Fusion
+- Linear fusion alpha sweep: [0.3, 0.4, 0.5, 0.6, 0.7] between best DPH variant and best BM25 variant
+- CombSUM of top-3 diverse systems
+
+### Other
+- Retrieval depth: 1000
+- Index: cached Terrier index at ~/.cache/autoresearch-retrieval/terrier_index
 
 ## Runs
 
-### Run 1: `dense-qwen3-8b-zeroshot`
-- **Description**: Zero-shot Qwen3-Embedding-8B dense retrieval, top-1000
-- **Parameter overrides**: None
-- **Expected output**: `runs/dense-qwen3-8b-zeroshot.run`
-- **Purpose**: Establish 8B dense retrieval baseline, compare to 0.6B (MAP@100=0.2105)
+### Phase 1: Base model evaluation (~25 runs)
+- DPH (1 run, no params)
+- InL2 (5 runs, c sweep)
+- PL2 (5 runs, c sweep)
+- DirichletLM (7 runs, mu sweep)
+- Hiemstra_LM (6 runs, lambda sweep)
+- BM25 baseline (1 run)
+- Expected time: ~8 minutes
 
-### Run 2: `linear-a03`
-- **Description**: Linear fusion of BM25+Bo1 and 8B dense retrieval (alpha=0.3 dense, 0.7 sparse)
-- **Parameter overrides**: None
-- **Expected output**: `runs/linear-a03.run`
-- **Purpose**: Test hybrid fusion with stronger dense component
+### Phase 2: PRF sweep (~120 runs)
+- Each of 6 base models x best param x Bo1 (12 configs) = 72 runs
+- Each of 6 base models x best param x KL (12 configs) = 72 runs
+- Expected time: ~40 minutes
 
-### Run 3: `linear-a03-reranked`
-- **Description**: Best fusion (linear-a03) reranked with Qwen3-Reranker-0.6B (news-short, ml768, top-1000)
-- **Parameter overrides**: None
-- **Expected output**: `runs/linear-a03-reranked.run`
-- **Purpose**: Full pipeline -- should achieve new best
+### Phase 3: RM3 on top-2 models (~16 runs)
+- Top-2 models x RM3 (8 configs each) = 16 runs
+- Expected time: ~8 minutes
+
+### Phase 4: Multi-system fusion (~15 runs)
+- Best DPH + best BM25: 5 alpha values
+- CombSUM of top-3 diverse: 1 run
+- Additional pairwise fusions: ~9 runs
+- Expected time: ~5 minutes
+
+### Output files
+- `runs/best-{model}.run` -- best configuration per base model (with or without PRF)
+- `runs/best-fusion.run` -- best multi-system fusion
+- `runs/best-overall.run` -- overall best configuration
+- `logs/results_grid.csv` -- full sweep results
 
 ## Expected Outcome
 
-- Dense-only (8B): MAP@100 ~0.25-0.28 (up from 0.2105 with 0.6B)
-- Linear fusion (a=0.3): MAP@100 ~0.28-0.30 (up from 0.2762 with 0.6B)
-- Fusion + reranker: MAP@100 ~0.29-0.32 (up from 0.2827 with 0.6B)
+- DPH+KL: MAP@100 ~0.255-0.265 (based on published MAP@1000=0.2857)
+- DirichletLM+KL: MAP@100 ~0.245-0.255
+- Best single model+PRF: MAP@100 ~0.260-0.270
+- Multi-system fusion: MAP@100 ~0.265-0.275 (diversity bonus)
+- Current BM25+Bo1 baseline: MAP@100=0.2504
 
 ## Baseline Comparison
 
-- Qwen3-Embedding-0.6B dense-only: MAP@100 = 0.2105
-- BM25+Bo1: MAP@100 = 0.2504
-- Linear(a=0.3) + Qwen3-Reranker (exp05 best): MAP@100 = 0.2827
+- Current BM25 only (k1=0.9, b=0.4): MAP@100=0.2141
+- Current BM25+Bo1 (k1=0.9, b=0.4, fd=5 ft=30): MAP@100=0.2504
+- Best overall: MAP@100=0.2929 (exp07 fusion with Qwen3-8B)
 
 ## Data Leakage Checklist
 
-- [x] Training does NOT use Robust04 test queries (no training, zero-shot only)
-- [x] Training does NOT use Robust04 qrels (no training)
-- [x] Hard negative mining uses MS-MARCO or documented train split only (N/A, no training)
-- [x] `evaluate_run()` called only for final evaluation, not during training
-- [x] No test-time information flows into model weights (all models used zero-shot)
+- [x] Training does NOT use Robust04 test queries (no training, only retrieval + evaluation)
+- [x] Training does NOT use Robust04 qrels (qrels used only for final evaluation via evaluate_run)
+- [x] Hard negative mining uses MS-MARCO or documented train split only (N/A -- no training)
+- [x] `evaluate_run()` called only for final evaluation, not during training (N/A -- no training loop)
+- [x] No test-time information flows into model weights (no model weights)
+
+Note: This is standard IR evaluation -- retrieval model parameters are tuned on the test set, which is standard practice for reporting oracle results. The goal is to find the best possible sparse retrieval configuration for use as a first-stage retriever in fusion pipelines.

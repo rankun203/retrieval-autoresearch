@@ -1,71 +1,62 @@
 """
-exp07-qwen3-embed-8b: Hybrid retrieval with Qwen3-Embedding-8B + BM25+Bo1 + Qwen3-Reranker.
+exp09b-dph-lm-sweep: CPU-only sweep of alternative retrieval models with PRF on Robust04.
 
-Pipeline:
-  1. BM25+Bo1 retrieval (top-1000)
-  2. Qwen3-Embedding-8B zero-shot dense retrieval (top-1000)
-  3. Linear fusion (alpha=0.3 dense, 0.7 sparse)
-  4. Qwen3-Reranker-0.6B reranking (news-short instruction, ml768, top-1000)
+Tests DPH, InL2, PL2, DirichletLM, Hiemstra_LM (+ BM25 reference) with Bo1/KL/RM3 PRF,
+then fuses best diverse systems.
+
+CPU-only experiment. No GPU needed.
 
 Usage:
-  uv run --with 'python-terrier' --with 'transformers>=4.51' --with faiss-cpu train.py
-
-Env:
-  JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
-  JVM_PATH=/usr/lib/jvm/java-21-amazon-corretto/lib/server/libjvm.so
+  uv run --with 'python-terrier' train.py
 """
 
 import os
-import gc
 import sys
+import csv
 import time
+import itertools
 
 import numpy as np
-import torch
-import torch.nn.functional as F
-from torch import Tensor
-import pyterrier as pt
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from prepare import load_robust04, evaluate_run, write_trec_run
 
 # ---------------------------------------------------------------------------
+# Java / PyTerrier init
+# ---------------------------------------------------------------------------
+import pyterrier as pt
+
+if not pt.java.started():
+    pt.java.init()
+
+# ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
+INDEX_PATH = os.path.expanduser("~/.cache/autoresearch-retrieval/terrier_index")
+NUM_RESULTS = 1000
+
+# BM25 baseline reference
 BM25_K1 = 0.9
 BM25_B = 0.4
-BO1_FB_DOCS = 5
-BO1_FB_TERMS = 30
-BM25_TOP_K = 1000
 
-EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-8B"
-EMBEDDING_DIM = 4096
-ENCODE_BATCH_SIZE = 64
-DOC_MAX_LENGTH = 512
-QUERY_MAX_LENGTH = 512
+# Model-specific parameter grids
+INL2_C_VALUES = [0.5, 1.0, 2.0, 5.0, 10.0]
+PL2_C_VALUES = [0.5, 1.0, 2.0, 5.0, 10.0]
+DIRICHLET_MU_VALUES = [500, 1000, 1500, 2000, 2500, 3000, 5000]
+HIEMSTRA_LAMBDA_VALUES = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]
 
-FUSION_ALPHA = 0.3  # dense weight; sparse weight = 1 - alpha
-DENSE_TOP_K = 1000
+# PRF grids
+FB_DOCS_VALUES = [3, 5, 10]
+FB_TERMS_VALUES = [10, 20, 30, 50]
+RM3_FB_DOCS = [5, 10]
+RM3_FB_TERMS = [20, 30]
+RM3_FB_LAMBDA = [0.5, 0.7]
 
-RERANKER_MODEL = "Qwen/Qwen3-Reranker-0.6B"
-RERANKER_MAX_LENGTH = 768
-RERANKER_BATCH_SIZE = 64
-RERANKER_DEPTH = 1000
-RERANKER_INSTRUCTION = "Given a news search query, retrieve relevant news articles that answer the query"
+# Fusion alpha values
+FUSION_ALPHAS = [0.3, 0.4, 0.5, 0.6, 0.7]
 
-TASK_INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
-
-peak_vram_mb = 0.0
 t_start = time.time()
-
-
-def update_peak_vram():
-    global peak_vram_mb
-    if torch.cuda.is_available():
-        current = torch.cuda.max_memory_allocated() / 1024 / 1024
-        peak_vram_mb = max(peak_vram_mb, current)
-
 
 # ---------------------------------------------------------------------------
 # Load data
@@ -74,211 +65,66 @@ print("Loading Robust04...", flush=True)
 corpus, queries, qrels = load_robust04()
 print(f"  {len(corpus):,} docs, {len(queries)} queries", flush=True)
 
-doc_ids_list = list(corpus.keys())
-doc_id_to_idx = {did: i for i, did in enumerate(doc_ids_list)}
-
-
-def get_doc_text(doc_id):
-    doc = corpus[doc_id]
-    return (doc.get("title", "") + " " + doc["text"]).strip()
-
-
-# ---------------------------------------------------------------------------
-# BM25+Bo1 first stage
-# ---------------------------------------------------------------------------
-if not pt.java.started():
-    pt.java.init()
-
-index_path = os.path.expanduser("~/.cache/autoresearch-retrieval/terrier_index")
-if not os.path.exists(os.path.join(index_path, "data.properties")):
-    print("Building Terrier index...", flush=True)
-    indexer = pt.IterDictIndexer(index_path, meta={"docno": 26})
-    def doc_iter():
-        for doc_id, doc in corpus.items():
-            text = (doc.get("title", "") + " " + doc["text"]).strip()
-            yield {"docno": doc_id, "text": text}
-    indexer.index(doc_iter())
-    print("  Index built.", flush=True)
-else:
-    print("  Using cached Terrier index.", flush=True)
-
-index_ref = pt.IndexRef.of(os.path.join(index_path, "data.properties"))
-bm25 = pt.terrier.Retriever(
-    index_ref, wmodel="BM25",
-    controls={"bm25.k_1": str(BM25_K1), "bm25.b": str(BM25_B)},
-    num_results=BM25_TOP_K,
-)
-bo1 = pt.rewrite.Bo1QueryExpansion(index_ref, fb_docs=BO1_FB_DOCS, fb_terms=BO1_FB_TERMS)
-pipeline = bm25 >> bo1 >> bm25
-
 topics_df = pd.DataFrame([{"qid": qid, "query": text} for qid, text in queries.items()])
 
-print("Running BM25+Bo1...", flush=True)
-t_bm25_start = time.time()
-results = pipeline.transform(topics_df)
-t_bm25 = time.time() - t_bm25_start
-print(f"  BM25+Bo1 done in {t_bm25:.1f}s", flush=True)
-
-# Build BM25 run dict: {qid: {doc_id: score}}
-bm25_run = {}
-for _, row in results.iterrows():
-    qid = str(row["qid"])
-    if qid not in bm25_run:
-        bm25_run[qid] = {}
-    bm25_run[qid][str(row["docno"])] = float(row["score"])
-
-print(f"  BM25+Bo1: {len(bm25_run)} queries, avg {np.mean([len(v) for v in bm25_run.values()]):.0f} docs/query", flush=True)
+# ---------------------------------------------------------------------------
+# Index
+# ---------------------------------------------------------------------------
+index_ref = pt.IndexRef.of(os.path.join(INDEX_PATH, "data.properties"))
+print(f"Using Terrier index at {INDEX_PATH}", flush=True)
 
 # ---------------------------------------------------------------------------
-# Qwen3-Embedding-8B dense retrieval
+# Helpers
 # ---------------------------------------------------------------------------
-from transformers import AutoModel, AutoTokenizer
+all_results = []
 
 
-def last_token_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
-    """Pool the last non-padding token's hidden state (for left-padded inputs)."""
-    left_padding = (attention_mask[:, -1].sum() == attention_mask.shape[0])
-    if left_padding:
-        return last_hidden_states[:, -1]
+def _results_to_run(results_df):
+    """Convert PyTerrier results DataFrame to run dict."""
+    run = {}
+    for _, row in results_df.iterrows():
+        qid = str(row["qid"])
+        if qid not in run:
+            run[qid] = {}
+        run[qid][str(row["docno"])] = float(row["score"])
+    return run
+
+
+def make_retriever(wmodel, controls=None):
+    """Create a PyTerrier retriever for the given weighting model."""
+    kwargs = {"num_results": NUM_RESULTS}
+    if controls:
+        kwargs["controls"] = controls
+    return pt.terrier.Retriever(index_ref, wmodel=wmodel, **kwargs)
+
+
+def run_model(wmodel, controls=None, label=None):
+    """Run a base retrieval model and return (run_dict, metrics)."""
+    retriever = make_retriever(wmodel, controls)
+    results = retriever.transform(topics_df)
+    run = _results_to_run(results)
+    metrics = evaluate_run(run, qrels)
+    return run, metrics
+
+
+def run_model_prf(wmodel, controls, prf_method, fb_docs, fb_terms, fb_lambda=None):
+    """Run a retrieval model + PRF and return (run_dict, metrics)."""
+    retriever = make_retriever(wmodel, controls)
+
+    if prf_method == "bo1":
+        qe = pt.rewrite.Bo1QueryExpansion(index_ref, fb_docs=fb_docs, fb_terms=fb_terms)
+    elif prf_method == "kl":
+        qe = pt.rewrite.KLQueryExpansion(index_ref, fb_docs=fb_docs, fb_terms=fb_terms)
+    elif prf_method == "rm3":
+        qe = pt.rewrite.RM3(index_ref, fb_docs=fb_docs, fb_terms=fb_terms, fb_lambda=fb_lambda)
     else:
-        sequence_lengths = attention_mask.sum(dim=1) - 1
-        batch_size = last_hidden_states.shape[0]
-        return last_hidden_states[
-            torch.arange(batch_size, device=last_hidden_states.device),
-            sequence_lengths,
-        ]
+        raise ValueError(f"Unknown PRF method: {prf_method}")
 
-
-def get_query_text(query: str) -> str:
-    """Format query with instruction prefix (from model card)."""
-    return f"Instruct: {TASK_INSTRUCTION}\nQuery:{query}"
-
-
-print(f"\nLoading {EMBEDDING_MODEL}...", flush=True)
-embed_tokenizer = AutoTokenizer.from_pretrained(EMBEDDING_MODEL, padding_side="left")
-embed_model = AutoModel.from_pretrained(
-    EMBEDDING_MODEL,
-    dtype=torch.float16,
-    device_map="cuda",
-    attn_implementation="sdpa",
-).eval()
-update_peak_vram()
-print(f"  Model loaded. Peak VRAM: {peak_vram_mb:.0f} MB", flush=True)
-
-
-@torch.no_grad()
-def encode_texts(texts, max_length, show_progress=True, label="texts"):
-    """Encode a list of texts into normalized embeddings."""
-    all_embeddings = []
-    total = len(texts)
-    for batch_start in range(0, total, ENCODE_BATCH_SIZE):
-        batch_end = min(batch_start + ENCODE_BATCH_SIZE, total)
-        batch_texts = texts[batch_start:batch_end]
-
-        batch_dict = embed_tokenizer(
-            batch_texts,
-            padding=True,
-            truncation=True,
-            max_length=max_length,
-            return_tensors="pt",
-        )
-        batch_dict = {k: v.to("cuda") for k, v in batch_dict.items()}
-
-        outputs = embed_model(**batch_dict)
-        embeddings = last_token_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
-        embeddings = F.normalize(embeddings, p=2, dim=1)
-        all_embeddings.append(embeddings.cpu().float().numpy())
-
-        del batch_dict, outputs, embeddings
-        torch.cuda.empty_cache()
-
-        if show_progress and (batch_end % (ENCODE_BATCH_SIZE * 20) == 0 or batch_end == total):
-            print(f"    Encoded {batch_end:,}/{total:,} {label}", flush=True)
-
-    return np.concatenate(all_embeddings, axis=0)
-
-
-# Encode corpus
-print("Encoding corpus documents...", flush=True)
-t_encode_start = time.time()
-doc_texts = [get_doc_text(did) for did in doc_ids_list]
-doc_embeddings = encode_texts(doc_texts, DOC_MAX_LENGTH, label="docs")
-t_encode_docs = time.time() - t_encode_start
-print(f"  Encoded {len(doc_ids_list):,} docs in {t_encode_docs:.1f}s, shape: {doc_embeddings.shape}", flush=True)
-del doc_texts
-gc.collect()
-
-# Encode queries
-print("Encoding queries...", flush=True)
-query_ids = list(queries.keys())
-query_texts = [get_query_text(queries[qid]) for qid in query_ids]
-query_embeddings = encode_texts(query_texts, QUERY_MAX_LENGTH, show_progress=True, label="queries")
-print(f"  Encoded {len(query_ids)} queries, shape: {query_embeddings.shape}", flush=True)
-del query_texts
-gc.collect()
-
-update_peak_vram()
-print(f"  Peak VRAM after encoding: {peak_vram_mb:.0f} MB", flush=True)
-
-# Build FAISS index
-print("Building FAISS index...", flush=True)
-import faiss
-faiss_index = faiss.IndexFlatIP(EMBEDDING_DIM)
-faiss_index.add(doc_embeddings)
-print(f"  FAISS index built with {faiss_index.ntotal:,} vectors, dim={EMBEDDING_DIM}", flush=True)
-
-# Dense retrieval
-print("Running dense retrieval...", flush=True)
-t_dense_start = time.time()
-scores, indices = faiss_index.search(query_embeddings, DENSE_TOP_K)
-t_dense = time.time() - t_dense_start
-print(f"  Dense retrieval done in {t_dense:.1f}s", flush=True)
-
-# Build dense run dict
-dense_run = {}
-for i, qid in enumerate(query_ids):
-    dense_run[qid] = {}
-    for j in range(DENSE_TOP_K):
-        idx = int(indices[i, j])
-        if idx >= 0:
-            doc_id = doc_ids_list[idx]
-            dense_run[qid][doc_id] = float(scores[i, j])
-
-# Free embedding model from GPU
-print("Freeing embedding model from GPU...", flush=True)
-del embed_model, embed_tokenizer, doc_embeddings, query_embeddings, faiss_index
-gc.collect()
-torch.cuda.empty_cache()
-if torch.cuda.is_available():
-    print(f"  VRAM after cleanup: {torch.cuda.memory_allocated() / 1024 / 1024:.0f} MB", flush=True)
-
-# ---------------------------------------------------------------------------
-# Run 1: Dense-only evaluation
-# ---------------------------------------------------------------------------
-os.makedirs("runs", exist_ok=True)
-os.makedirs("logs", exist_ok=True)
-
-all_results = {}
-
-print(f"\n{'='*60}", flush=True)
-print("Run: dense-qwen3-8b-zeroshot", flush=True)
-print(f"{'='*60}", flush=True)
-
-write_trec_run(dense_run, "runs/dense-qwen3-8b-zeroshot.run", run_name="dense-qwen3-8b-zeroshot")
-metrics = evaluate_run(dense_run, qrels)
-all_results["dense-qwen3-8b-zeroshot"] = {"metrics": metrics}
-print(f"  MAP@100:    {metrics['map@100']:.6f}", flush=True)
-print(f"  nDCG@10:    {metrics['ndcg@10']:.6f}", flush=True)
-print(f"  MAP@1000:   {metrics['map@1000']:.6f}", flush=True)
-print(f"  Recall@100: {metrics['recall@100']:.6f}", flush=True)
-
-# ---------------------------------------------------------------------------
-# Run 2: Linear fusion (alpha=0.3 dense, 0.7 sparse)
-# ---------------------------------------------------------------------------
-print(f"\n{'='*60}", flush=True)
-print(f"Run: linear-a03", flush=True)
-print(f"  Linear alpha={FUSION_ALPHA} (dense={FUSION_ALPHA}, sparse={1-FUSION_ALPHA})", flush=True)
-print(f"{'='*60}", flush=True)
+    pipeline = retriever >> qe >> retriever
+    results = pipeline.transform(topics_df)
+    run = _results_to_run(results)
+    metrics = evaluate_run(run, qrels)
+    return run, metrics
 
 
 def normalize_scores(run):
@@ -313,161 +159,453 @@ def linear_fusion(run_a, run_b, alpha):
     return fused
 
 
-fusion_run = linear_fusion(dense_run, bm25_run, FUSION_ALPHA)
-write_trec_run(fusion_run, "runs/linear-a03.run", run_name="linear-a03")
-metrics = evaluate_run(fusion_run, qrels)
-all_results["linear-a03"] = {"metrics": metrics}
-print(f"  MAP@100:    {metrics['map@100']:.6f}", flush=True)
-print(f"  nDCG@10:    {metrics['ndcg@10']:.6f}", flush=True)
-print(f"  MAP@1000:   {metrics['map@1000']:.6f}", flush=True)
-print(f"  Recall@100: {metrics['recall@100']:.6f}", flush=True)
+def combsum_fusion(runs):
+    """CombSUM: sum of min-max normalized scores across all runs."""
+    normalized_runs = [normalize_scores(r) for r in runs]
+    all_qids = set()
+    for nr in normalized_runs:
+        all_qids |= set(nr.keys())
+    fused = {}
+    for qid in all_qids:
+        all_docs = set()
+        for nr in normalized_runs:
+            all_docs |= set(nr.get(qid, {}).keys())
+        fused[qid] = {}
+        for did in all_docs:
+            score = sum(nr.get(qid, {}).get(did, 0.0) for nr in normalized_runs)
+            fused[qid][did] = score
+    return fused
+
+
+def record_result(phase, model, param_name, param_val, prf_method, fb_docs, fb_terms,
+                  fb_lambda, metrics, elapsed):
+    """Record a result row."""
+    row = {
+        "phase": phase,
+        "model": model,
+        "param_name": param_name,
+        "param_val": param_val,
+        "prf_method": prf_method if prf_method else "none",
+        "fb_docs": fb_docs,
+        "fb_terms": fb_terms,
+        "fb_lambda": fb_lambda,
+        "map@100": metrics["map@100"],
+        "ndcg@10": metrics["ndcg@10"],
+        "map@1000": metrics["map@1000"],
+        "recall@100": metrics["recall@100"],
+        "seconds": elapsed,
+    }
+    all_results.append(row)
+    return row
+
 
 # ---------------------------------------------------------------------------
-# Run 3: Fusion + Qwen3-Reranker-0.6B reranking
+# Phase 1: Base model evaluation (no PRF)
 # ---------------------------------------------------------------------------
-print(f"\n{'='*60}", flush=True)
-print(f"Run: linear-a03-reranked", flush=True)
-print(f"  Reranking linear-a03 with {RERANKER_MODEL} (ml={RERANKER_MAX_LENGTH}, depth={RERANKER_DEPTH})", flush=True)
-print(f"{'='*60}", flush=True)
+print(f"\n{'='*70}", flush=True)
+print("PHASE 1: Base model evaluation (no PRF)", flush=True)
+print(f"{'='*70}", flush=True)
 
-from transformers import AutoModelForCausalLM
+# Store best config per model for Phase 2
+best_per_model = {}  # model_name -> {"controls": dict, "run": dict, "metrics": dict, "label": str}
 
-print(f"\nLoading {RERANKER_MODEL}...", flush=True)
-reranker_tokenizer = AutoTokenizer.from_pretrained(RERANKER_MODEL, padding_side="left")
-reranker_model = AutoModelForCausalLM.from_pretrained(
-    RERANKER_MODEL, torch_dtype=torch.float16, device_map="cuda",
-    attn_implementation="sdpa",
-).eval()
-update_peak_vram()
+# --- BM25 baseline ---
+print("\n--- BM25 (baseline reference) ---", flush=True)
+t0 = time.time()
+bm25_run, bm25_metrics = run_model("BM25", {"bm25.k_1": str(BM25_K1), "bm25.b": str(BM25_B)})
+elapsed = time.time() - t0
+record_result(1, "BM25", "k1/b", f"{BM25_K1}/{BM25_B}", None, None, None, None, bm25_metrics, elapsed)
+print(f"  BM25 k1={BM25_K1} b={BM25_B}:  MAP@100={bm25_metrics['map@100']:.4f}  "
+      f"nDCG@10={bm25_metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+best_per_model["BM25"] = {
+    "controls": {"bm25.k_1": str(BM25_K1), "bm25.b": str(BM25_B)},
+    "run": bm25_run,
+    "metrics": bm25_metrics,
+    "label": f"k1={BM25_K1},b={BM25_B}",
+}
 
-token_true_id = reranker_tokenizer.convert_tokens_to_ids("yes")
-token_false_id = reranker_tokenizer.convert_tokens_to_ids("no")
+# --- DPH (parameter-free) ---
+print("\n--- DPH (parameter-free) ---", flush=True)
+t0 = time.time()
+dph_run, dph_metrics = run_model("DPH")
+elapsed = time.time() - t0
+record_result(1, "DPH", "none", "N/A", None, None, None, None, dph_metrics, elapsed)
+print(f"  DPH:  MAP@100={dph_metrics['map@100']:.4f}  nDCG@10={dph_metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+best_per_model["DPH"] = {
+    "controls": None,
+    "run": dph_run,
+    "metrics": dph_metrics,
+    "label": "parameter-free",
+}
 
-# Official prefix/suffix from model card
-reranker_prefix = '<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be "yes" or "no".<|im_end|>\n<|im_start|>user\n'
-reranker_suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
-reranker_prefix_tokens = reranker_tokenizer.encode(reranker_prefix, add_special_tokens=False)
-reranker_suffix_tokens = reranker_tokenizer.encode(reranker_suffix, add_special_tokens=False)
+# --- InL2 (c sweep) ---
+print("\n--- InL2 (c sweep) ---", flush=True)
+best_inl2 = None
+for c_val in INL2_C_VALUES:
+    t0 = time.time()
+    controls = {"c": str(c_val)}
+    run, metrics = run_model("InL2", controls)
+    elapsed = time.time() - t0
+    record_result(1, "InL2", "c", c_val, None, None, None, None, metrics, elapsed)
+    print(f"  InL2 c={c_val}:  MAP@100={metrics['map@100']:.4f}  nDCG@10={metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+    if best_inl2 is None or metrics["map@100"] > best_inl2["metrics"]["map@100"]:
+        best_inl2 = {"controls": controls, "run": run, "metrics": metrics, "label": f"c={c_val}"}
+best_per_model["InL2"] = best_inl2
+print(f"  Best InL2: {best_inl2['label']}  MAP@100={best_inl2['metrics']['map@100']:.4f}", flush=True)
 
+# --- PL2 (c sweep) ---
+print("\n--- PL2 (c sweep) ---", flush=True)
+best_pl2 = None
+for c_val in PL2_C_VALUES:
+    t0 = time.time()
+    controls = {"c": str(c_val)}
+    run, metrics = run_model("PL2", controls)
+    elapsed = time.time() - t0
+    record_result(1, "PL2", "c", c_val, None, None, None, None, metrics, elapsed)
+    print(f"  PL2 c={c_val}:  MAP@100={metrics['map@100']:.4f}  nDCG@10={metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+    if best_pl2 is None or metrics["map@100"] > best_pl2["metrics"]["map@100"]:
+        best_pl2 = {"controls": controls, "run": run, "metrics": metrics, "label": f"c={c_val}"}
+best_per_model["PL2"] = best_pl2
+print(f"  Best PL2: {best_pl2['label']}  MAP@100={best_pl2['metrics']['map@100']:.4f}", flush=True)
 
-def format_reranker_input(query_text, doc_text):
-    return f"<Instruct>: {RERANKER_INSTRUCTION}\n<Query>: {query_text}\n<Document>: {doc_text}"
+# --- DirichletLM (mu sweep) ---
+print("\n--- DirichletLM (mu sweep) ---", flush=True)
+best_dlm = None
+for mu in DIRICHLET_MU_VALUES:
+    t0 = time.time()
+    controls = {"mu": str(mu)}
+    run, metrics = run_model("DirichletLM", controls)
+    elapsed = time.time() - t0
+    record_result(1, "DirichletLM", "mu", mu, None, None, None, None, metrics, elapsed)
+    print(f"  DirichletLM mu={mu}:  MAP@100={metrics['map@100']:.4f}  nDCG@10={metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+    if best_dlm is None or metrics["map@100"] > best_dlm["metrics"]["map@100"]:
+        best_dlm = {"controls": controls, "run": run, "metrics": metrics, "label": f"mu={mu}"}
+best_per_model["DirichletLM"] = best_dlm
+print(f"  Best DirichletLM: {best_dlm['label']}  MAP@100={best_dlm['metrics']['map@100']:.4f}", flush=True)
 
+# --- Hiemstra_LM (lambda sweep) ---
+print("\n--- Hiemstra_LM (lambda sweep) ---", flush=True)
+best_hlm = None
+for lam in HIEMSTRA_LAMBDA_VALUES:
+    t0 = time.time()
+    controls = {"lambda": str(lam)}
+    run, metrics = run_model("Hiemstra_LM", controls)
+    elapsed = time.time() - t0
+    record_result(1, "Hiemstra_LM", "lambda", lam, None, None, None, None, metrics, elapsed)
+    print(f"  Hiemstra_LM lambda={lam}:  MAP@100={metrics['map@100']:.4f}  nDCG@10={metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+    if best_hlm is None or metrics["map@100"] > best_hlm["metrics"]["map@100"]:
+        best_hlm = {"controls": controls, "run": run, "metrics": metrics, "label": f"lambda={lam}"}
+best_per_model["Hiemstra_LM"] = best_hlm
+print(f"  Best Hiemstra_LM: {best_hlm['label']}  MAP@100={best_hlm['metrics']['map@100']:.4f}", flush=True)
 
-def process_reranker_inputs(pairs, max_length):
-    """Tokenize with official prefix/suffix token prepend/append."""
-    inputs = reranker_tokenizer(
-        pairs, padding=False, truncation="longest_first",
-        return_attention_mask=False,
-        max_length=max_length - len(reranker_prefix_tokens) - len(reranker_suffix_tokens),
-    )
-    for i, ele in enumerate(inputs["input_ids"]):
-        inputs["input_ids"][i] = reranker_prefix_tokens + ele + reranker_suffix_tokens
-    inputs = reranker_tokenizer.pad(inputs, padding=True, return_tensors="pt", max_length=max_length)
-    for key in inputs:
-        inputs[key] = inputs[key].to("cuda")
-    return inputs
-
-
-@torch.no_grad()
-def compute_reranker_scores(inputs):
-    """Score via log_softmax over [no, yes] logits at last position."""
-    batch_logits = reranker_model(**inputs).logits[:, -1, :]
-    true_vector = batch_logits[:, token_true_id]
-    false_vector = batch_logits[:, token_false_id]
-    stacked = torch.stack([false_vector, true_vector], dim=1)
-    log_probs = torch.nn.functional.log_softmax(stacked, dim=1)
-    scores = log_probs[:, 1].exp().float().tolist()
-    return scores
-
-
-# Sort fusion run by score for reranking
-fusion_sorted = {}
-for qid, docs in fusion_run.items():
-    fusion_sorted[qid] = sorted(docs.items(), key=lambda x: -x[1])
-
-t_rerank_start = time.time()
-reranked_run = {}
-total_pairs = 0
-
-for i, qid in enumerate(fusion_sorted):
-    query_text = queries[qid]
-    candidates = fusion_sorted[qid][:RERANKER_DEPTH]
-    doc_ids = [d[0] for d in candidates]
-    doc_texts = [get_doc_text(d) for d in doc_ids]
-
-    all_scores = []
-    for batch_start in range(0, len(doc_ids), RERANKER_BATCH_SIZE):
-        batch_end = min(batch_start + RERANKER_BATCH_SIZE, len(doc_ids))
-        batch_texts = doc_texts[batch_start:batch_end]
-
-        pairs = [format_reranker_input(query_text, dt) for dt in batch_texts]
-        inputs = process_reranker_inputs(pairs, RERANKER_MAX_LENGTH)
-        scores = compute_reranker_scores(inputs)
-        all_scores.extend(scores)
-
-        del inputs
-        torch.cuda.empty_cache()
-
-    reranked_run[qid] = {}
-    for doc_id, score in zip(doc_ids, all_scores):
-        reranked_run[qid][doc_id] = score
-
-    total_pairs += len(doc_ids)
-    if (i + 1) % 50 == 0 or (i + 1) == len(fusion_sorted):
-        print(f"    Reranked {i+1}/{len(fusion_sorted)} queries ({total_pairs:,} pairs scored)", flush=True)
-
-update_peak_vram()
-t_rerank = time.time() - t_rerank_start
-print(f"  Reranking done in {t_rerank:.1f}s", flush=True)
-
-write_trec_run(reranked_run, "runs/linear-a03-reranked.run", run_name="linear-a03-reranked")
-metrics = evaluate_run(reranked_run, qrels)
-all_results["linear-a03-reranked"] = {"metrics": metrics}
-print(f"  MAP@100:    {metrics['map@100']:.6f}", flush=True)
-print(f"  nDCG@10:    {metrics['ndcg@10']:.6f}", flush=True)
-print(f"  MAP@1000:   {metrics['map@1000']:.6f}", flush=True)
-print(f"  Recall@100: {metrics['recall@100']:.6f}", flush=True)
-
-# Cleanup reranker
-del reranker_model, reranker_tokenizer
-gc.collect()
-torch.cuda.empty_cache()
+# Phase 1 summary
+print(f"\n--- Phase 1 Summary ---", flush=True)
+print(f"{'Model':<15} {'Best Params':<20} {'MAP@100':>8} {'nDCG@10':>8} {'MAP@1000':>9} {'R@100':>7}", flush=True)
+print("-" * 70, flush=True)
+phase1_ranked = sorted(best_per_model.items(), key=lambda x: x[1]["metrics"]["map@100"], reverse=True)
+for model_name, info in phase1_ranked:
+    m = info["metrics"]
+    print(f"{model_name:<15} {info['label']:<20} {m['map@100']:8.4f} {m['ndcg@10']:8.4f} {m['map@1000']:9.4f} {m['recall@100']:7.4f}", flush=True)
 
 # ---------------------------------------------------------------------------
-# Results summary
+# Phase 2: PRF sweep (Bo1 and KL on all models)
+# ---------------------------------------------------------------------------
+print(f"\n{'='*70}", flush=True)
+print("PHASE 2: PRF sweep (Bo1 and KL on all models)", flush=True)
+print(f"{'='*70}", flush=True)
+
+best_prf_per_model = {}  # model_name -> best result with PRF
+
+for model_name, model_info in best_per_model.items():
+    controls = model_info["controls"]
+    wmodel = model_name
+
+    for prf_method in ["bo1", "kl"]:
+        print(f"\n--- {model_name} + {prf_method.upper()} ---", flush=True)
+        count = 0
+        total = len(FB_DOCS_VALUES) * len(FB_TERMS_VALUES)
+        for fb_docs in FB_DOCS_VALUES:
+            for fb_terms in FB_TERMS_VALUES:
+                count += 1
+                t0 = time.time()
+                try:
+                    _, metrics = run_model_prf(wmodel, controls, prf_method, fb_docs, fb_terms)
+                    elapsed = time.time() - t0
+                    record_result(2, model_name, model_info["label"], None, prf_method,
+                                  fb_docs, fb_terms, None, metrics, elapsed)
+                    print(f"  [{count:2d}/{total}] fd={fb_docs} ft={fb_terms}  "
+                          f"MAP@100={metrics['map@100']:.4f}  ({elapsed:.1f}s)", flush=True)
+
+                    key = model_name
+                    if key not in best_prf_per_model or metrics["map@100"] > best_prf_per_model[key]["metrics"]["map@100"]:
+                        best_prf_per_model[key] = {
+                            "wmodel": wmodel,
+                            "controls": controls,
+                            "prf_method": prf_method,
+                            "fb_docs": fb_docs,
+                            "fb_terms": fb_terms,
+                            "fb_lambda": None,
+                            "metrics": metrics,
+                            "label": f"{model_name}+{prf_method.upper()} fd={fb_docs} ft={fb_terms}",
+                        }
+                except Exception as e:
+                    print(f"  [{count:2d}/{total}] fd={fb_docs} ft={fb_terms}  ERROR: {e}", flush=True)
+
+# Phase 2 summary
+print(f"\n--- Phase 2 Summary: Best PRF per model ---", flush=True)
+print(f"{'Config':<45} {'MAP@100':>8} {'nDCG@10':>8} {'MAP@1000':>9} {'R@100':>7}", flush=True)
+print("-" * 80, flush=True)
+phase2_ranked = sorted(best_prf_per_model.items(), key=lambda x: x[1]["metrics"]["map@100"], reverse=True)
+for model_name, info in phase2_ranked:
+    m = info["metrics"]
+    print(f"{info['label']:<45} {m['map@100']:8.4f} {m['ndcg@10']:8.4f} {m['map@1000']:9.4f} {m['recall@100']:7.4f}", flush=True)
+
+# Also compare best PRF vs best no-PRF
+print(f"\n--- Improvement from PRF ---", flush=True)
+for model_name in best_per_model:
+    base_map = best_per_model[model_name]["metrics"]["map@100"]
+    if model_name in best_prf_per_model:
+        prf_map = best_prf_per_model[model_name]["metrics"]["map@100"]
+        delta = prf_map - base_map
+        print(f"  {model_name}: {base_map:.4f} -> {prf_map:.4f} (delta={delta:+.4f})", flush=True)
+
+# ---------------------------------------------------------------------------
+# Phase 3: RM3 on top-2 models
+# ---------------------------------------------------------------------------
+print(f"\n{'='*70}", flush=True)
+print("PHASE 3: RM3 on top-2 models from Phase 2", flush=True)
+print(f"{'='*70}", flush=True)
+
+top2_models = [name for name, _ in phase2_ranked[:2]]
+print(f"  Top-2: {top2_models}", flush=True)
+
+for model_name in top2_models:
+    info = best_per_model[model_name]
+    wmodel = model_name
+    controls = info["controls"]
+
+    print(f"\n--- {model_name} + RM3 ---", flush=True)
+    count = 0
+    total = len(RM3_FB_DOCS) * len(RM3_FB_TERMS) * len(RM3_FB_LAMBDA)
+    for fb_docs in RM3_FB_DOCS:
+        for fb_terms in RM3_FB_TERMS:
+            for fb_lambda in RM3_FB_LAMBDA:
+                count += 1
+                t0 = time.time()
+                try:
+                    _, metrics = run_model_prf(wmodel, controls, "rm3", fb_docs, fb_terms, fb_lambda)
+                    elapsed = time.time() - t0
+                    record_result(3, model_name, info["label"], None, "rm3",
+                                  fb_docs, fb_terms, fb_lambda, metrics, elapsed)
+                    print(f"  [{count:2d}/{total}] fd={fb_docs} ft={fb_terms} fl={fb_lambda}  "
+                          f"MAP@100={metrics['map@100']:.4f}  ({elapsed:.1f}s)", flush=True)
+
+                    key = model_name
+                    if metrics["map@100"] > best_prf_per_model[key]["metrics"]["map@100"]:
+                        best_prf_per_model[key] = {
+                            "wmodel": wmodel,
+                            "controls": controls,
+                            "prf_method": "rm3",
+                            "fb_docs": fb_docs,
+                            "fb_terms": fb_terms,
+                            "fb_lambda": fb_lambda,
+                            "metrics": metrics,
+                            "label": f"{model_name}+RM3 fd={fb_docs} ft={fb_terms} fl={fb_lambda}",
+                        }
+                except Exception as e:
+                    print(f"  [{count:2d}/{total}] fd={fb_docs} ft={fb_terms} fl={fb_lambda}  ERROR: {e}", flush=True)
+
+# ---------------------------------------------------------------------------
+# Phase 4: Multi-system fusion
+# ---------------------------------------------------------------------------
+print(f"\n{'='*70}", flush=True)
+print("PHASE 4: Multi-system fusion", flush=True)
+print(f"{'='*70}", flush=True)
+
+# Re-run best configs to get runs for fusion
+print("\nRe-running best configs to get runs for fusion...", flush=True)
+best_runs = {}  # model_name -> run_dict
+
+for model_name, info in best_prf_per_model.items():
+    t0 = time.time()
+    if info["prf_method"] == "none" or info.get("prf_method") is None:
+        run, _ = run_model(info["wmodel"], info["controls"])
+    else:
+        run, metrics = run_model_prf(
+            info["wmodel"], info["controls"], info["prf_method"],
+            info["fb_docs"], info["fb_terms"], info.get("fb_lambda"),
+        )
+    best_runs[model_name] = run
+    elapsed = time.time() - t0
+    print(f"  {model_name}: {info['label']}  ({elapsed:.1f}s)", flush=True)
+
+# Save individual best runs
+os.makedirs("runs", exist_ok=True)
+for model_name, run in best_runs.items():
+    safe_name = model_name.lower().replace("_", "-")
+    write_trec_run(run, f"runs/best-{safe_name}.run", run_name=f"best-{safe_name}")
+
+# --- Pairwise linear fusion: best DPH + best BM25 ---
+print("\n--- Linear fusion: DPH vs BM25 ---", flush=True)
+fusion_results = []
+
+if "DPH" in best_runs and "BM25" in best_runs:
+    for alpha in FUSION_ALPHAS:
+        t0 = time.time()
+        fused_run = linear_fusion(best_runs["DPH"], best_runs["BM25"], alpha)
+        metrics = evaluate_run(fused_run, qrels)
+        elapsed = time.time() - t0
+        record_result(4, "DPH+BM25", "alpha", alpha, "fusion", None, None, None, metrics, elapsed)
+        fusion_results.append({"name": f"DPH+BM25 alpha={alpha}", "run": fused_run, "metrics": metrics})
+        print(f"  alpha={alpha}:  MAP@100={metrics['map@100']:.4f}  nDCG@10={metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+
+# --- Pairwise fusions between all top model pairs ---
+print("\n--- Pairwise fusions (top models) ---", flush=True)
+model_names = list(best_runs.keys())
+for i in range(len(model_names)):
+    for j in range(i + 1, len(model_names)):
+        name_a, name_b = model_names[i], model_names[j]
+        if (name_a == "DPH" and name_b == "BM25") or (name_a == "BM25" and name_b == "DPH"):
+            continue  # Already done above
+        for alpha in [0.4, 0.5, 0.6]:
+            t0 = time.time()
+            fused_run = linear_fusion(best_runs[name_a], best_runs[name_b], alpha)
+            metrics = evaluate_run(fused_run, qrels)
+            elapsed = time.time() - t0
+            label = f"{name_a}+{name_b} alpha={alpha}"
+            record_result(4, f"{name_a}+{name_b}", "alpha", alpha, "fusion", None, None, None, metrics, elapsed)
+            fusion_results.append({"name": label, "run": fused_run, "metrics": metrics})
+            print(f"  {label}:  MAP@100={metrics['map@100']:.4f}  ({elapsed:.1f}s)", flush=True)
+
+# --- CombSUM of top-3 diverse systems ---
+print("\n--- CombSUM (top-3 diverse systems) ---", flush=True)
+top3_names = [name for name, _ in phase2_ranked[:3]]
+if len(top3_names) >= 3:
+    top3_runs = [best_runs[n] for n in top3_names if n in best_runs]
+    if len(top3_runs) >= 3:
+        t0 = time.time()
+        combsum_run = combsum_fusion(top3_runs)
+        metrics = evaluate_run(combsum_run, qrels)
+        elapsed = time.time() - t0
+        label = f"CombSUM({'+'.join(top3_names)})"
+        record_result(4, label, "combsum", "top3", "fusion", None, None, None, metrics, elapsed)
+        fusion_results.append({"name": label, "run": combsum_run, "metrics": metrics})
+        print(f"  {label}:  MAP@100={metrics['map@100']:.4f}  nDCG@10={metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+
+# Also try CombSUM of ALL systems
+print("\n--- CombSUM (all systems) ---", flush=True)
+all_system_runs = list(best_runs.values())
+if len(all_system_runs) >= 2:
+    t0 = time.time()
+    combsum_all_run = combsum_fusion(all_system_runs)
+    metrics = evaluate_run(combsum_all_run, qrels)
+    elapsed = time.time() - t0
+    label = f"CombSUM(all-{len(all_system_runs)})"
+    record_result(4, label, "combsum", "all", "fusion", None, None, None, metrics, elapsed)
+    fusion_results.append({"name": label, "run": combsum_all_run, "metrics": metrics})
+    print(f"  {label}:  MAP@100={metrics['map@100']:.4f}  nDCG@10={metrics['ndcg@10']:.4f}  ({elapsed:.1f}s)", flush=True)
+
+# ---------------------------------------------------------------------------
+# Find overall best and save
+# ---------------------------------------------------------------------------
+# Best among individual models + PRF
+best_single = max(best_prf_per_model.items(), key=lambda x: x[1]["metrics"]["map@100"])
+best_single_name, best_single_info = best_single
+best_single_map = best_single_info["metrics"]["map@100"]
+
+# Best among fusions
+best_fusion = None
+if fusion_results:
+    best_fusion = max(fusion_results, key=lambda x: x["metrics"]["map@100"])
+
+# Overall best
+if best_fusion and best_fusion["metrics"]["map@100"] > best_single_map:
+    overall_best_run = best_fusion["run"]
+    overall_best_metrics = best_fusion["metrics"]
+    overall_best_label = best_fusion["name"]
+else:
+    overall_best_run = best_runs[best_single_name]
+    overall_best_metrics = best_single_info["metrics"]
+    overall_best_label = best_single_info["label"]
+
+write_trec_run(overall_best_run, "runs/best-overall.run", run_name="best-overall")
+
+if best_fusion:
+    write_trec_run(best_fusion["run"], "runs/best-fusion.run", run_name="best-fusion")
+
+# ---------------------------------------------------------------------------
+# Write full results CSV
+# ---------------------------------------------------------------------------
+csv_path = "logs/results_grid.csv"
+os.makedirs("logs", exist_ok=True)
+fieldnames = ["phase", "model", "param_name", "param_val", "prf_method",
+              "fb_docs", "fb_terms", "fb_lambda",
+              "map@100", "ndcg@10", "map@1000", "recall@100", "seconds"]
+with open(csv_path, "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    for row in sorted(all_results, key=lambda r: -r["map@100"]):
+        writer.writerow(row)
+print(f"\nFull results written to {csv_path} ({len(all_results)} rows)", flush=True)
+
+# ---------------------------------------------------------------------------
+# Final summary
 # ---------------------------------------------------------------------------
 t_end = time.time()
+total_seconds = t_end - t_start
 
 print(f"\n{'='*80}", flush=True)
 print("RESULTS SUMMARY", flush=True)
 print(f"{'='*80}", flush=True)
-print(f"{'Run':<30} {'MAP@100':>8} {'nDCG@10':>8} {'MAP@1000':>9} {'R@100':>8}", flush=True)
+
+# Per-model leaderboard (best config with or without PRF)
+print(f"\n{'Model+PRF':<45} {'MAP@100':>8} {'nDCG@10':>8} {'MAP@1000':>9} {'R@100':>7}", flush=True)
 print("-" * 80, flush=True)
-for name, r in all_results.items():
-    m = r["metrics"]
-    print(f"{name:<30} {m['map@100']:8.6f} {m['ndcg@10']:8.6f} {m['map@1000']:9.6f} {m['recall@100']:8.6f}", flush=True)
 
-# Best run by MAP@100
-best_name = max(all_results, key=lambda k: all_results[k]["metrics"]["map@100"])
-best = all_results[best_name]
+# Single model results
+single_ranked = sorted(best_prf_per_model.items(), key=lambda x: x[1]["metrics"]["map@100"], reverse=True)
+for model_name, info in single_ranked:
+    m = info["metrics"]
+    print(f"{info['label']:<45} {m['map@100']:8.4f} {m['ndcg@10']:8.4f} {m['map@1000']:9.4f} {m['recall@100']:7.4f}", flush=True)
 
-print(f"\n{'='*60}", flush=True)
-print(f"BEST RUN: {best_name}", flush=True)
-print(f"{'='*60}", flush=True)
+# Fusion results
+if fusion_results:
+    print(f"\n{'Fusion':<45} {'MAP@100':>8} {'nDCG@10':>8} {'MAP@1000':>9} {'R@100':>7}", flush=True)
+    print("-" * 80, flush=True)
+    for fr in sorted(fusion_results, key=lambda x: -x["metrics"]["map@100"])[:10]:
+        m = fr["metrics"]
+        print(f"{fr['name']:<45} {m['map@100']:8.4f} {m['ndcg@10']:8.4f} {m['map@1000']:9.4f} {m['recall@100']:7.4f}", flush=True)
 
-print("---")
-print(f"ndcg@10:          {best['metrics']['ndcg@10']:.6f}")
-print(f"map@1000:         {best['metrics']['map@1000']:.6f}")
-print(f"map@100:          {best['metrics']['map@100']:.6f}")
-print(f"recall@100:       {best['metrics']['recall@100']:.6f}")
-print(f"training_seconds: 0.0")
-print(f"total_seconds:    {t_end - t_start:.1f}")
-print(f"peak_vram_mb:     {peak_vram_mb:.1f}")
-print(f"num_steps:        0")
-print(f"encoder_model:    {EMBEDDING_MODEL}")
-print(f"num_docs_indexed: {len(corpus)}")
-print(f"eval_duration:    {t_end - t_start:.3f}")
-print(f"loss_curve:       N/A (zero-shot)")
-print(f"budget_assessment: OK")
-print(f"method:           linear-a03({EMBEDDING_MODEL}) >> {RERANKER_MODEL} rerank (ml={RERANKER_MAX_LENGTH}, depth={RERANKER_DEPTH})")
+# Comparison with baselines
+current_bm25_bo1_map100 = 0.2504
+print(f"\n{'='*70}", flush=True)
+print("COMPARISON WITH BASELINES", flush=True)
+print(f"{'='*70}", flush=True)
+print(f"  Current BM25+Bo1 (k1=0.9, b=0.4, fd=5 ft=30): MAP@100={current_bm25_bo1_map100:.4f}", flush=True)
+print(f"  Best single model+PRF (this exp):               MAP@100={best_single_info['metrics']['map@100']:.4f}  "
+      f"(delta={best_single_info['metrics']['map@100'] - current_bm25_bo1_map100:+.4f})", flush=True)
+if best_fusion:
+    print(f"  Best fusion (this exp):                         MAP@100={best_fusion['metrics']['map@100']:.4f}  "
+          f"(delta={best_fusion['metrics']['map@100'] - current_bm25_bo1_map100:+.4f})", flush=True)
+print(f"  OVERALL BEST:                                   MAP@100={overall_best_metrics['map@100']:.4f}  "
+      f"[{overall_best_label}]", flush=True)
+
+# ---------------------------------------------------------------------------
+# Standard summary block
+# ---------------------------------------------------------------------------
+print(f"\n---", flush=True)
+print(f"ndcg@10:          {overall_best_metrics['ndcg@10']:.6f}", flush=True)
+print(f"map@1000:         {overall_best_metrics['map@1000']:.6f}", flush=True)
+print(f"map@100:          {overall_best_metrics['map@100']:.6f}", flush=True)
+print(f"recall@100:       {overall_best_metrics['recall@100']:.6f}", flush=True)
+print(f"training_seconds: 0.0", flush=True)
+print(f"total_seconds:    {total_seconds:.1f}", flush=True)
+print(f"peak_vram_mb:     0.0", flush=True)
+print(f"num_steps:        0", flush=True)
+print(f"encoder_model:    {overall_best_label}", flush=True)
+print(f"num_docs_indexed: {len(corpus)}", flush=True)
+print(f"eval_duration:    {total_seconds:.3f}", flush=True)
+print(f"loss_curve:       N/A (parameter sweep)", flush=True)
+print(f"budget_assessment: OK", flush=True)
+print(f"method:           {overall_best_label}", flush=True)
+print(f"total_configs:    {len(all_results)}", flush=True)

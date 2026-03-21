@@ -52,3 +52,5 @@ ab58e59	0.503494	0.242845	0.211114	0.390085	18.4	2.235	discard	Qwen3-Embedding-0
 ab58e59	0.524312	0.344337	0.290338	0.505722	18.4	2.235	keep	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) + fusion a03 (new 0.6B best)	exp12-doc-expansion
 ab58e59	0.546176	0.334244	0.280585	0.487516	18.4	2.235	discard	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) + fusion a05	exp12-doc-expansion
 b79802e	0.456591	0.294296	0.250283	0.452602	0.0	5623.9	discard	BM25+KL	N/A	N/A	N/A	BM25+KL PRF param sweep best (k1=0.6, b=0.375, fd=3, ft=20), tied with baseline	exp09-bm25-prf-tune
+8647f0f	0.460000	0.295600	0.251400	0.449100	0.0	6092.0	discard	InL2+KL	N/A	N/A	N/A	Best single model+PRF: InL2+KL fd=3 ft=20 (+0.0010 over BM25+Bo1)	exp09b-dph-lm-sweep
+8647f0f	0.472707	0.307276	0.258265	0.467913	0.0	6092.0	keep	CombSUM(all-6)	N/A	N/A	N/A	CombSUM fusion of 6 diverse sparse models+PRF (new best sparse-only)	exp09b-dph-lm-sweep

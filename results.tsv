@@ -51,3 +51,4 @@ ab58e59	0.488574	0.323509	0.274441	0.480474	18.4	2.235	discard	Qwen3-Embedding-0
 ab58e59	0.503494	0.242845	0.211114	0.390085	18.4	2.235	discard	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) dense only	exp12-doc-expansion
 ab58e59	0.524312	0.344337	0.290338	0.505722	18.4	2.235	keep	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) + fusion a03 (new 0.6B best)	exp12-doc-expansion
 ab58e59	0.546176	0.334244	0.280585	0.487516	18.4	2.235	discard	Qwen3-Embedding-0.6B	256	512	N/A	Doc expansion (Qwen2.5-3B, 5q/doc) + fusion a05	exp12-doc-expansion
+b79802e	0.456591	0.294296	0.250283	0.452602	0.0	5623.9	discard	BM25+KL	N/A	N/A	N/A	BM25+KL PRF param sweep best (k1=0.6, b=0.375, fd=3, ft=20), tied with baseline	exp09-bm25-prf-tune

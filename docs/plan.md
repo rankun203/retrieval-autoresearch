@@ -45,6 +45,10 @@ exp12-doc-expansion (0.6B class best): BM25+Bo1 + Qwen3-Embedding-0.6B fusion-a0
 
 - [x] BM25/PRF parameter sweep — DISCARD (exp09): 210 configs tested across BM25-only, RM3, Bo1, KL variants; best KL MAP@100=0.2503, confirms default baseline params near-optimal; no meaningful gain from tuning b/k1/feedback terms
 
+## Parameter Tuning / Multi-Model Sparse Fusion
+
+- [x] DPH/LM model sweep + multi-system fusion — KEEP (exp09b): CombSUM of 6 sparse systems (BM25, DPH, DirichletLM, HiemstraLM, INL2, PL2) MAP@100=0.2583 (+3.2% over BM25+Bo1), recall@100=0.4679; best new sparse-only result, though still below best hybrid dense+sparse result (0.2929)
+
 ## Priority 3: Training improvements
 
 - [ ] Hard negative mining (iterative, multi-phase) — use Qwen3.5-9B as relevance judge (never touch qrels for mining)

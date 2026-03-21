@@ -29,7 +29,20 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent.parent
+import subprocess as _sp
+
+def _get_repo_root() -> Path:
+    """Get the main git repo root, not the worktree root."""
+    try:
+        result = _sp.run(["git", "rev-parse", "--git-common-dir"], capture_output=True, text=True, cwd=Path(__file__).parent)
+        git_common = Path(result.stdout.strip())
+        if git_common.is_absolute():
+            return git_common.parent
+        return (Path(__file__).parent / git_common).resolve().parent
+    except Exception:
+        return Path(__file__).parent.parent
+
+PROJECT_ROOT = _get_repo_root()
 CACHE_DIR = PROJECT_ROOT / ".cache"
 METADATA_FILE = "metadata.json"
 

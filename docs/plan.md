@@ -59,7 +59,7 @@ exp12-doc-expansion (0.6B class best): BM25+Bo1 + Qwen3-Embedding-0.6B fusion-a0
 ## Priority 4: Hybrid retrieval
 
 - [x] Dense + BM25 fusion (RRF and linear interpolation) — KEEP (exp05): linear fusion alpha=0.5 + Qwen3-Reranker achieved MAP@100=0.2827 (new best), +5.9% over exp03b; fusion consistently outperforms either component alone
-- [ ] SPLADE-style sparse augmentation on top of dense
+- [x] SPLADE-style sparse augmentation on top of dense — DISCARD (exp14): splade-cocondenser-ensembledistil, standalone MAP@100=0.2158, best triple fusion MAP@100=0.2830, doesn't beat doc expansion fusion (0.2903). Domain mismatch (MS-MARCO trained) limits gains on Robust04 news.
 
 ## Priority 5: Advanced methods (from survey)
 

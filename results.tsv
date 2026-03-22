@@ -58,3 +58,7 @@ b79802e	0.456591	0.294296	0.250283	0.452602	0.0	5623.9	discard	BM25+KL	N/A	N/A	N
 2781003	0.504420	0.322903	0.272362	0.488205	36.8	5577.3	discard	Qwen3-Embedding-0.6B	16	512	2e-5	HardNeg(BM25+BGE-CE+LLM-think) MarginMSE fine-tuned 0.6B + BM25+Bo1 fusion a03 (insufficient data)	exp13-hard-negatives
 19d0e75	0.463018	0.251401	0.215831	0.409974	8.1	9.665	discard	splade-cocondenser-ensembledistil	64	256	N/A	SPLADE zero-shot standalone on Robust04 (domain mismatch)	exp14-splade
 19d0e75	0.527389	0.337346	0.282972	0.494223	8.1	9.665	discard	SPLADE+Qwen3-0.6B+BM25	64	256	N/A	Triple fusion SPLADE+dense+BM25 best (s=0.2,d=0.3,b=0.5)	exp14-splade
+306ee84	0.452800	-1	0.223600	-1	33.8	N/A	discard	Qwen3-Embedding-0.6B	4	512	2e-5	MarginMSE fine-tuned 0.6B + BM25+Bo1 fusion, 500q LLM-selected (catastrophic forgetting)	exp13b-hard-neg-scale
+306ee84	0.463478	0.269883	0.230259	0.427968	33.8	476.5	discard	Qwen3-Embedding-0.6B	4	512	2e-5	MarginMSE fine-tuned 0.6B + BM25+Bo1 fusion, 1000q LLM-selected (best scale, still forgetting)	exp13b-hard-neg-scale
+306ee84	0.463200	-1	0.230200	-1	33.8	N/A	discard	Qwen3-Embedding-0.6B	4	512	2e-5	MarginMSE fine-tuned 0.6B + BM25+Bo1 fusion, 2000q LLM-selected (catastrophic forgetting)	exp13b-hard-neg-scale
+306ee84	0.456800	-1	0.223600	-1	33.8	N/A	discard	Qwen3-Embedding-0.6B	4	512	2e-5	MarginMSE fine-tuned 0.6B + BM25+Bo1 fusion, 4000q LLM-selected (more data worse)	exp13b-hard-neg-scale

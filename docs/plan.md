@@ -48,10 +48,13 @@ exp12-doc-expansion (0.6B class best): BM25+Bo1 + Qwen3-Embedding-0.6B fusion-a0
 ## Parameter Tuning / Multi-Model Sparse Fusion
 
 - [x] DPH/LM model sweep + multi-system fusion — KEEP (exp09b): CombSUM of 6 sparse systems (BM25, DPH, DirichletLM, HiemstraLM, INL2, PL2) MAP@100=0.2583 (+3.2% over BM25+Bo1), recall@100=0.4679; best new sparse-only result, though still below best hybrid dense+sparse result (0.2929)
+- [x] BM25F field indexing (exp09c) — DISCARD: field index had only 1 field (bug), BM25F standalone 0.1904, fusion with BM25+Bo1 reached 0.2558 but below CombSUM 0.2583
+- [x] Factorial BM25×PRF search (exp09d) — DISCARD: 2500 configs tested. Best KL MAP@100=0.2539 (k1=0.7 b=0.5 fd=10 ft=100), optimal BM25 params differ per PRF technique but gains marginal over baseline 0.2504
 
 ## Priority 3: Training improvements
 
 - [x] Hard negative mining (iterative, multi-phase) — DISCARD (exp13): pipeline works (LLM think P(yes) 48% better separation than no-think) but only 139/500 queries produced valid examples. Needs LLM-based query selection for thousands of queries, not keyword filtering for hundreds. Both finetuned runs worse than zero-shot baseline.
+- [x] Hard negative mining v2 (exp13b) — DISCARD: LLM query selection works (4787 queries) but MarginMSE with binary no-think P(yes) causes catastrophic forgetting at all scales (500/1000/2000/4000 queries). Need contrastive loss + think-mode scores.
 - [ ] MarginMSE distillation from cross-encoder
 - [ ] Gradient accumulation + cosine LR scheduling
 - [ ] Two-stage curriculum: easy negatives → hard negatives

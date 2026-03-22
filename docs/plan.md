@@ -51,7 +51,7 @@ exp12-doc-expansion (0.6B class best): BM25+Bo1 + Qwen3-Embedding-0.6B fusion-a0
 
 ## Priority 3: Training improvements
 
-- [ ] Hard negative mining (iterative, multi-phase) — use Qwen3.5-9B as relevance judge (never touch qrels for mining)
+- [x] Hard negative mining (iterative, multi-phase) — DISCARD (exp13): pipeline works (LLM think P(yes) 48% better separation than no-think) but only 139/500 queries produced valid examples. Needs LLM-based query selection for thousands of queries, not keyword filtering for hundreds. Both finetuned runs worse than zero-shot baseline.
 - [ ] MarginMSE distillation from cross-encoder
 - [ ] Gradient accumulation + cosine LR scheduling
 - [ ] Two-stage curriculum: easy negatives → hard negatives

@@ -34,6 +34,10 @@ LOOP FOREVER:
   4. Go to 1
 ```
 
+### GPU Scheduling
+
+**Never let the GPU idle.** Design the next experiment while the current one is running, and launch it as soon as GPU is free. Review and Cleanup are CPU-only — overlap them with GPU work. **Exception:** if the next experiment depends on current results (e.g., builds on its output), wait for the current one to finish first.
+
 ### Phase 1: Design
 
 Launch `experiment-design` agent with:

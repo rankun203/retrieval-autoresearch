@@ -55,6 +55,7 @@ exp12-doc-expansion (0.6B class best): BM25+Bo1 + Qwen3-Embedding-0.6B fusion-a0
 
 - [x] Hard negative mining (iterative, multi-phase) — DISCARD (exp13): pipeline works (LLM think P(yes) 48% better separation than no-think) but only 139/500 queries produced valid examples. Needs LLM-based query selection for thousands of queries, not keyword filtering for hundreds. Both finetuned runs worse than zero-shot baseline.
 - [x] Hard negative mining v2 (exp13b) — DISCARD: LLM query selection works (4787 queries) but MarginMSE with binary no-think P(yes) causes catastrophic forgetting at all scales (500/1000/2000/4000 queries). Need contrastive loss + think-mode scores.
+- [x] InfoNCE contrastive HN mining (exp16-infonce-hn) — DISCARD: InfoNCE 3-phase HN mining with no-think labels (4997q) and think labels (937q) tested on Qwen3-0.6B, e5-base-v2, e5-large-v2. Best result: e5-large fusion MAP@100=0.2801, below current best 0.2903. Fine-tuning still degrades performance vs zero-shot; InfoNCE loss does not overcome domain mismatch on Robust04 news.
 - [ ] MarginMSE distillation from cross-encoder
 - [ ] Gradient accumulation + cosine LR scheduling
 - [ ] Two-stage curriculum: easy negatives → hard negatives
